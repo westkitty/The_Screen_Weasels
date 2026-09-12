@@ -3,6 +3,7 @@
 #include "board_config.h"
 #include "weasel_protocol.h"
 #include "face_renderer.h"
+#include "network.h"
 
 #if __has_include("wifi_secrets.h")
 #include "wifi_secrets.h"
@@ -68,10 +69,26 @@ void setup() {
 
     // Initial diagnostic face (Green with Orange accents: established discovery fixture)
     renderer.renderDiagnosticFace(0.0f, 0.0f, 0.0f);
+
     Serial.println("[CYD] Initial face rendered. Touch screen to test gaze tracking.");
+
+#if HAS_WIFI_SECRETS
+#ifdef WEASEL_WIFI_CONFIGURED
+#if WEASEL_WIFI_CONFIGURED
+    setupNetwork(
+        WEASEL_WIFI_SSID,
+        WEASEL_WIFI_PASSWORD,
+        WEASEL_HOST_IP,
+        WEASEL_HOST_PORT
+    );
+#endif
+#endif
+#endif
 }
 
 void loop() {
+    loopNetwork();
+
     uint16_t touchX = 0;
     uint16_t touchY = 0;
 

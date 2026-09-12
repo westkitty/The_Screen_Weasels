@@ -2,7 +2,7 @@
 
 Last Updated: 2026-09-12 — Milestone 0 Physical Hardware Proof
 Current Branch: main
-Current Milestone: Milestone 1 (Cursor Portal) — Ready to Begin
+Current Milestone: Milestone 1 (Cursor Portal) — Physical Host/Shell Heartbeat Verified
 
 ---
 
@@ -44,6 +44,23 @@ This runs:
 ## 3. Next Physical Action
 
 Milestone 0 is complete on CYD #1.
+
+### M1 Checkpoint — Physical Host/Shell Heartbeat
+
+Verified on physical CYD #1:
+
+- CYD #1 connected to the macOS host over the local LAN using WebSockets.
+- `shell_a` sent a valid `SHELL_HELLO`.
+- The host registered the physical shell.
+- The host returned authoritative `FACE_SYNC`.
+- CYD #1 parsed the response and identified `fixture_weasel_01`.
+- The macOS host supports a runtime `WEASEL_PORT` override because port 8765
+  is occupied locally by the Tailscale network extension.
+- The verified development port on this Mac is 18765.
+
+This proves bidirectional application-layer communication between the physical
+shell and the Mac. Cursor-edge crossing and physical Hand rendering remain
+pending.
 
 Milestone 1 is the cursor portal:
 

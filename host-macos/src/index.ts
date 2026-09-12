@@ -2,7 +2,17 @@ import { WeaselHostServer } from './server.js';
 
 async function main() {
   const server = new WeaselHostServer();
-  await server.start();
+
+  const requestedPort = Number.parseInt(
+    process.env.WEASEL_PORT ?? '',
+    10
+  );
+
+  const port = Number.isFinite(requestedPort)
+    ? requestedPort
+    : undefined;
+
+  await server.start(port);
 }
 
 main().catch((err) => {
