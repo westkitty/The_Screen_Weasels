@@ -2,7 +2,7 @@
 
 Last Updated: 2026-09-12 — Milestone 0 Physical Hardware Proof
 Current Branch: main
-Current Milestone: Milestone 1 (Cursor Portal) — Physical Host/Shell Heartbeat Verified
+Current Milestone: Milestone 1 (Cursor Portal) — Physical Heartbeat + macOS Edge Detection Verified
 
 ---
 
@@ -61,6 +61,22 @@ Verified on physical CYD #1:
 This proves bidirectional application-layer communication between the physical
 shell and the Mac. Cursor-edge crossing and physical Hand rendering remain
 pending.
+
+### M1 Checkpoint — macOS Cursor Edge Detection
+
+Verified on the MacBook Air:
+
+- Accessibility permission is granted for the native bridge.
+- A real CoreGraphics event tap receives mouse movement.
+- The portal edge is runtime-configurable.
+- The provisional right-edge threshold was physically exercised.
+- Repeated `EDGE_ENTER` and `EDGE_EXIT` transitions were observed.
+- Cursor coordinates and movement deltas were captured at the boundary.
+
+This proves the host can detect the boundary where the macOS cursor transitions
+into the Weasel-world Hand. Continued motion inside the Weasel world and
+physical CYD Hand rendering remain pending.
+
 
 Milestone 1 is the cursor portal:
 
