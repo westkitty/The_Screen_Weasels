@@ -36,6 +36,15 @@ export const FaceStateSchema = z.object({
   grabbed: z.boolean().default(false),
 });
 
+export const SyncedFaceSchema = z.object({
+  identity: FaceIdentitySchema,
+  state: FaceStateSchema,
+});
+
+export const FaceSyncPayloadSchema = z.object({
+  faces: z.array(SyncedFaceSchema),
+});
+
 export const AudioFeaturesSchema = z.object({
   rms: z.number().min(0).max(1),
   bass: z.number().min(0).max(1),
@@ -58,6 +67,66 @@ export const ShellHelloSchema = z.object({
   freeHeap: z.number(),
   macAddress: z.string(),
 });
+
+// Typed Message Payloads (Discriminated Union)
+export const HandUpdateMessageSchema = z.object({
+  type: z.literal('HAND_UPDATE'),
+  seq: z.number(),
+  timestamp: z.number(),
+  payload: HandStateSchema,
+});
+
+export const FaceSyncMessageSchema = z.object({
+  type: z.literal('FACE_SYNC'),
+  seq: z.number(),
+  timestamp: z.number(),
+  payload: FaceSyncPayloadSchema,
+});
+
+export const AudioFrameMessageSchema = z.object({
+  type: z.literal('AUDIO_FRAME'),
+  seq: z.number(),
+  timestamp: z.number(),
+  payload: AudioFeaturesSchema,
+});
+
+export const ShellHelloMessageSchema = z.object({
+  type: z.literal('SHELL_HELLO'),
+  seq: z.number(),
+  timestamp: z.number(),
+  payload: ShellHelloSchema,
+});
+
+export const TouchEventMessageSchema = z.object({
+  type: z.literal('TOUCH_EVENT'),
+  seq: z.number(),
+  timestamp: z.number(),
+  payload: TouchEventSchema,
+});
+
+export const PingMessageSchema = z.object({
+  type: z.literal('PING'),
+  seq: z.number(),
+  timestamp: z.number(),
+  payload: z.object({}).optional().default({}),
+});
+
+export const PongMessageSchema = z.object({
+  type: z.literal('PONG'),
+  seq: z.number(),
+  timestamp: z.number(),
+  payload: z.object({}).optional().default({}),
+});
+
+export const WeaselMessageSchema = z.discriminatedUnion('type', [
+  HandUpdateMessageSchema,
+  FaceSyncMessageSchema,
+  AudioFrameMessageSchema,
+  ShellHelloMessageSchema,
+  TouchEventMessageSchema,
+  PingMessageSchema,
+  PongMessageSchema,
+]);
 
 export const EnvelopeSchema = z.object({
   type: z.enum(['HAND_UPDATE', 'FACE_SYNC', 'AUDIO_FRAME', 'SHELL_HELLO', 'TOUCH_EVENT', 'PING', 'PONG']),

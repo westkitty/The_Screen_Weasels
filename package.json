@@ -4,10 +4,14 @@
   "private": true,
   "description": "Two neighboring physical worlds inhabited by persistent 2D creatures across ESP32 CYD screens.",
   "scripts": {
+    "validate": "bash tools/validate.sh",
     "build": "pnpm -r run build",
     "test": "pnpm --filter @screen-weasels/protocol test",
     "simulator": "pnpm --filter @screen-weasels/simulator dev",
     "host": "pnpm --filter @screen-weasels/host dev",
+    "mock-shell": "pnpm --filter @screen-weasels/tools run mock-device",
+    "test:integration": "node tools/dist/tools/integration-test.js",
+    "firmware:build": ".venv/bin/pio run -d firmware",
     "lint": "echo 'Linting workspace...' && pnpm -r --if-present run lint"
   },
   "devDependencies": {

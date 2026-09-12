@@ -1,5 +1,11 @@
 import { WebSocketServer, WebSocket } from 'ws';
-import { DEFAULT_WEBSOCKET_PORT, DEFAULT_WEBSOCKET_PATH, EnvelopeSchema } from '@screen-weasels/protocol';
+import {
+  DEFAULT_WEBSOCKET_PORT,
+  DEFAULT_WEBSOCKET_PATH,
+  WeaselMessageSchema,
+  type WeaselMessage,
+  type SyncedFace,
+} from '@screen-weasels/protocol';
 import { WorldStateEngine } from './state-engine.js';
 
 export class WeaselHostServer {
@@ -22,14 +28,15 @@ export class WeaselHostServer {
         ws.on('message', (data) => {
           try {
             const raw = JSON.parse(data.toString());
-            const parsed = EnvelopeSchema.safeParse(raw);
+            const parsed = WeaselMessageSchema.safeParse(raw);
             if (parsed.success) {
-              this.handleInboundEnvelope(ws, parsed.data);
+              this.handleInboundMessage(ws, parsed.data);
             } else {
-              console.warn('[Host] Malformed envelope received:', parsed.error.message);
+              console.warn('[Host] Rejected malformed message:', parsed.error.message);
+              this.send(ws, 'PONG', {});
             }
           } catch (err) {
-            console.error('[Host] Failed to parse message JSON:', err);
+            console.error('[Host] Failed to parse JSON message:', err);
           }
         });
 
@@ -46,23 +53,25 @@ export class WeaselHostServer {
     });
   }
 
-  private handleInboundEnvelope(ws: WebSocket, env: any) {
-    if (env.type === 'SHELL_HELLO') {
-      const shellId = env.payload.shellId || 'unknown_shell';
+  private handleInboundMessage(ws: WebSocket, msg: WeaselMessage) {
+    if (msg.type === 'SHELL_HELLO') {
+      const shellId = msg.payload.shellId;
       this.connectedShells.set(shellId, ws);
-      console.log(`[Host] Registered ${shellId} (Heap: ${env.payload.freeHeap} bytes, Version: ${env.payload.firmwareVersion})`);
+      console.log(`[Host] Registered shell '${shellId}' (Heap: ${msg.payload.freeHeap} bytes, Firmware: ${msg.payload.firmwareVersion})`);
 
-      // Immediately sync primary face to shell
-      const primaryFace = this.engine.getFace('weasel_01');
-      if (primaryFace.identity && primaryFace.state) {
-        this.send(ws, 'FACE_SYNC', { faces: [primaryFace.state] });
+      // Immediately send authoritative FACE_SYNC carrying identity and state
+      const primaryFace = this.engine.getFace('fixture_weasel_01');
+      if (primaryFace) {
+        this.send(ws, 'FACE_SYNC', { faces: [primaryFace] });
       }
-    } else if (env.type === 'TOUCH_EVENT') {
-      console.log(`[Host] Touch from shell at (${env.payload.x}, ${env.payload.y})`);
+    } else if (msg.type === 'TOUCH_EVENT') {
+      console.log(`[Host] Touch from shell at (${msg.payload.x}, ${msg.payload.y}, active=${msg.payload.active})`);
+    } else if (msg.type === 'PING') {
+      this.send(ws, 'PONG', {});
     }
   }
 
-  public broadcast(type: string, payload: unknown) {
+  public broadcast(type: any, payload: any) {
     for (const ws of this.connectedShells.values()) {
       if (ws.readyState === WebSocket.OPEN) {
         this.send(ws, type, payload);
@@ -70,7 +79,7 @@ export class WeaselHostServer {
     }
   }
 
-  private send(ws: WebSocket, type: string, payload: unknown) {
+  public send(ws: WebSocket, type: any, payload: any) {
     const envelope = {
       type,
       seq: ++this.seq,

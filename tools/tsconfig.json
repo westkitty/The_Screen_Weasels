@@ -2,7 +2,7 @@
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "rootDir": "./"
+    "rootDir": "../"
   },
-  "include": ["mock-device.ts", "mock-host.ts"]
+  "include": ["**/*.ts", "../host-macos/src/**/*.ts"]
 }

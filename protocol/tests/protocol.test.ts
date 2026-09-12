@@ -4,8 +4,11 @@ import {
   HandStateSchema,
   FaceIdentitySchema,
   FaceStateSchema,
-  AudioFeaturesSchema,
-  EnvelopeSchema,
+  SyncedFaceSchema,
+  FaceSyncPayloadSchema,
+  WeaselMessageSchema,
+  FaceSyncMessageSchema,
+  HandUpdateMessageSchema,
 } from '../src/schemas.js';
 
 test('HandState validates correct values and boundaries', () => {
@@ -21,7 +24,6 @@ test('HandState validates correct values and boundaries', () => {
   };
   assert.deepStrictEqual(HandStateSchema.parse(validHand), validHand);
 
-  // Out of bounds check
   assert.throws(() => {
     HandStateSchema.parse({ ...validHand, x: 400 });
   });
@@ -29,8 +31,8 @@ test('HandState validates correct values and boundaries', () => {
 
 test('FaceIdentity validates color formatting and features', () => {
   const validIdentity = {
-    id: 'weasel_01',
-    name: 'Emerald_Snarl',
+    id: 'fixture_weasel_01',
+    name: 'Green-Orange-Fixture',
     primaryColor: '#10B981',
     accentColor: '#F97316',
     eyeShape: 'almond' as const,
@@ -39,31 +41,93 @@ test('FaceIdentity validates color formatting and features', () => {
   };
   assert.deepStrictEqual(FaceIdentitySchema.parse(validIdentity), validIdentity);
 
-  // Invalid hex color
   assert.throws(() => {
     FaceIdentitySchema.parse({ ...validIdentity, primaryColor: 'invalid-hex' });
   });
 });
 
-test('FaceState handles defaults and range clamps', () => {
-  const state = FaceStateSchema.parse({
-    id: 'weasel_01',
-    x: 100,
-    y: 100,
-    expression: 'curious',
-  });
-  assert.strictEqual(state.scale, 1.0);
-  assert.strictEqual(state.gazeX, 0);
-  assert.strictEqual(state.grabbed, false);
+test('FACE_SYNC round-trip preserves identity and state completely', () => {
+  const syncedFace = {
+    identity: {
+      id: 'fixture_weasel_01',
+      name: 'Green-Orange-Fixture',
+      primaryColor: '#10B981',
+      accentColor: '#F97316',
+      eyeShape: 'almond' as const,
+      toothType: 'sharp' as const,
+      traitSeed: 101,
+    },
+    state: {
+      id: 'fixture_weasel_01',
+      x: 160,
+      y: 120,
+      vx: 5.0,
+      vy: -2.0,
+      scale: 1.2,
+      gazeX: 0.4,
+      gazeY: -0.3,
+      mouthOpen: 0.6,
+      browAngle: -4,
+      expression: 'curious' as const,
+      grabbed: false,
+    },
+  };
+
+  const payload = { faces: [syncedFace] };
+  const validatedPayload = FaceSyncPayloadSchema.parse(payload);
+  assert.deepStrictEqual(validatedPayload, payload);
+
+  const message = {
+    type: 'FACE_SYNC' as const,
+    seq: 10,
+    timestamp: 1726174800000,
+    payload,
+  };
+
+  const serialized = JSON.stringify(message);
+  const deserialized = JSON.parse(serialized);
+  const parsedMessage = WeaselMessageSchema.parse(deserialized);
+
+  assert.strictEqual(parsedMessage.type, 'FACE_SYNC');
+  if (parsedMessage.type === 'FACE_SYNC') {
+    const face = parsedMessage.payload.faces[0];
+    assert.strictEqual(face.identity.id, 'fixture_weasel_01');
+    assert.strictEqual(face.identity.primaryColor, '#10B981');
+    assert.strictEqual(face.identity.accentColor, '#F97316');
+    assert.strictEqual(face.identity.eyeShape, 'almond');
+    assert.strictEqual(face.identity.toothType, 'sharp');
+    assert.strictEqual(face.identity.traitSeed, 101);
+    assert.strictEqual(face.state.scale, 1.2);
+    assert.strictEqual(face.state.gazeX, 0.4);
+    assert.strictEqual(face.state.expression, 'curious');
+  }
 });
 
-test('Envelope serialization round-trip', () => {
-  const envelope = {
-    type: 'HAND_UPDATE' as const,
+test('WeaselMessageSchema rejects invalid payload for message type', () => {
+  const invalidHandMessage = {
+    type: 'HAND_UPDATE',
     seq: 1,
     timestamp: Date.now(),
-    payload: { active: true },
+    payload: {
+      // Missing x, y, shellId etc.
+      active: true,
+    },
   };
-  const parsed = EnvelopeSchema.parse(envelope);
-  assert.strictEqual(parsed.type, 'HAND_UPDATE');
+
+  assert.throws(() => {
+    WeaselMessageSchema.parse(invalidHandMessage);
+  });
+});
+
+test('WeaselMessageSchema rejects unrecognized message types', () => {
+  const unknownTypeMessage = {
+    type: 'BOGUS_TYPE',
+    seq: 1,
+    timestamp: Date.now(),
+    payload: {},
+  };
+
+  assert.throws(() => {
+    WeaselMessageSchema.parse(unknownTypeMessage);
+  });
 });

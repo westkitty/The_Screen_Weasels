@@ -19,15 +19,21 @@ export class ProceduralFaceRenderer {
     ctx.scale(state.scale, state.scale);
 
     const eyeDistance = 34;
-    const eyeWidth = identity.eyeShape === 'circular' ? 14 : 16;
-    const eyeHeight = identity.eyeShape === 'squint' ? 6 : 14;
+    const isStartled = state.expression === 'startled';
+    const isCurious = state.expression === 'curious';
+
+    // Startle dilation increases eye dimensions
+    const baseWidth = identity.eyeShape === 'circular' ? 14 : 16;
+    const baseHeight = identity.eyeShape === 'squint' ? 6 : 14;
+    const eyeWidth = isStartled ? baseWidth + 2 : baseWidth;
+    const eyeHeight = isStartled ? baseHeight + 5 : baseHeight;
 
     // Eyebrows
     ctx.strokeStyle = identity.primaryColor;
     ctx.lineWidth = 3;
     ctx.lineCap = 'round';
 
-    const browArousal = state.expression === 'startled' ? -8 : state.expression === 'suspicious' ? 6 : state.browAngle;
+    const browArousal = isStartled ? -9 : isCurious ? -3 : state.browAngle;
 
     // Left Brow
     ctx.beginPath();
@@ -41,9 +47,9 @@ export class ProceduralFaceRenderer {
     ctx.lineTo(eyeDistance + 14, -22 + browArousal);
     ctx.stroke();
 
-    // Eyes
-    this.renderEye(-eyeDistance, -6, eyeWidth, eyeHeight, state.gazeX, state.gazeY, identity);
-    this.renderEye(eyeDistance, -6, eyeWidth, eyeHeight, state.gazeX, state.gazeY, identity);
+    // Eyes with pupil dilation in startle state
+    this.renderEye(-eyeDistance, -6, eyeWidth, eyeHeight, state.gazeX, state.gazeY, identity, isStartled);
+    this.renderEye(eyeDistance, -6, eyeWidth, eyeHeight, state.gazeX, state.gazeY, identity, isStartled);
 
     // Cheeks
     ctx.fillStyle = identity.accentColor;
@@ -63,7 +69,7 @@ export class ProceduralFaceRenderer {
 
     // Mouth & Teeth
     const mouthY = 28;
-    const mouthWidth = 26;
+    const mouthWidth = isStartled ? 20 : 26;
     const mouthOpen = Math.max(0, state.mouthOpen);
 
     ctx.fillStyle = '#000000';
@@ -79,7 +85,6 @@ export class ProceduralFaceRenderer {
     if (identity.toothType === 'sharp') {
       ctx.fillStyle = '#FFFFFF';
       ctx.beginPath();
-      // Top tooth
       ctx.moveTo(-6, mouthY - 4 - mouthOpen * 5);
       ctx.lineTo(0, mouthY + 3);
       ctx.lineTo(6, mouthY - 4 - mouthOpen * 5);
@@ -91,7 +96,6 @@ export class ProceduralFaceRenderer {
     }
 
     if (debug) {
-      // Debug bounding circle and gaze vector
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
       ctx.lineWidth = 1;
       ctx.beginPath();
@@ -106,7 +110,7 @@ export class ProceduralFaceRenderer {
 
       ctx.fillStyle = '#94a3b8';
       ctx.font = '9px monospace';
-      ctx.fillText(`${identity.name} [${state.expression}]`, -40, 56);
+      ctx.fillText(`${identity.id} [${state.expression}] (dilate=${isStartled})`, -50, 56);
     }
 
     ctx.restore();
@@ -119,13 +123,14 @@ export class ProceduralFaceRenderer {
     h: number,
     gazeX: number,
     gazeY: number,
-    identity: FaceIdentity
+    identity: FaceIdentity,
+    isStartled: boolean
   ) {
     const { ctx } = this;
     ctx.save();
     ctx.translate(x, y);
 
-    // Eye outline
+    // Eye contour
     ctx.fillStyle = '#000000';
     ctx.strokeStyle = identity.primaryColor;
     ctx.lineWidth = 2.5;
@@ -135,8 +140,10 @@ export class ProceduralFaceRenderer {
     ctx.fill();
     ctx.stroke();
 
-    // Pupil
-    const pupilR = Math.max(3, w * 0.35);
+    // Pupil: Dilation scales radius up by 1.6x when startled
+    const basePupilR = Math.max(3, w * 0.35);
+    const pupilR = isStartled ? basePupilR * 1.6 : basePupilR;
+
     const px = Math.max(-w + pupilR + 1, Math.min(w - pupilR - 1, gazeX * (w - pupilR)));
     const py = Math.max(-h + pupilR + 1, Math.min(h - pupilR - 1, gazeY * (h - pupilR)));
 

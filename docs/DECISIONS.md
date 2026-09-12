@@ -15,51 +15,51 @@ This log records foundational architecture decisions, explicitly classifying the
 
 ---
 
-## 2. Vector Graphics Strategy (SVG vs. Parametric)
+## 2. Removal of `-D BOARD_HAS_PSRAM=0` Macro
+* **Decision**: Completely removed `-D BOARD_HAS_PSRAM=0` from `platformio.ini`.
+* **Status**: **VERIFIED FIX**.
+* **Rationale**:
+  * In the ESP32 Arduino core (`esp32-hal-psram.c` / `esp32-hal-psram.h`) and associated board headers, checks are written as `#if defined(BOARD_HAS_PSRAM)` or `#ifdef BOARD_HAS_PSRAM`.
+  * In C/C++ preprocessors, defining a macro to `0` still defines the symbol. Thus, `#ifdef BOARD_HAS_PSRAM` evaluates to **true**, erroneously triggering SPIRAM initialization attempts during boot.
+  * Standard 2.8" ESP32-2432S028R boards do NOT have physical PSRAM populated.
+  * We rely on runtime `psramFound()` checks and verified board configuration instead.
+
+---
+
+## 3. Vector Graphics Strategy (Parametric vs. Full SVG)
 * **Selected Technology**: Constrained Procedural Vector Representation (on-device) + SVG (authoring/simulator).
 * **Status**: **PROVISIONAL IMPLEMENTATION HYPOTHESIS** (Pending Milestone 0 framerate/heap benchmark).
 * **Rationale**:
   * Parsing arbitrary SVG XML at runtime on an ESP32 with ~160 KB free heap under active Wi-Fi causes allocation thrashing and drops framerates to <10 FPS.
   * The Screen Weasel faces are composed of geometric primitives: eye contours, pupil circles, brow lines, mouth arcs, teeth polygons, and cheek accents.
   * Storing and animating parametric parameters (`pupilX`, `gazeY`, `mouthOpen`, `squashStretch`) allows 40–60 FPS rendering with zero dynamic heap allocations.
-* **Fallback / Pivot Path**: If complex curves require pre-rasterized elements, use a hybrid approach of packed 1-bit or 4-bit alpha masks with dynamic color tinting.
 
 ---
 
-## 3. World State Authority & Dual Shell Coordination
+## 4. World State Authority & Dual Shell Coordination
 * **Selected Technology**: Mac Host-Authoritative State Engine.
 * **Status**: **PROJECT DECISION**.
 * **Rationale**:
   * The MacBook is present during operation.
   * Avoids complex distributed consensus or P2P mesh logic between two resource-constrained ESP32 chips.
-  * The Mac manages the 9 persistent identities, migration between shells, external music indexing, and system audio capture.
+  * The Mac manages identity persistence, shell migration, external music indexing, and system audio capture.
   * CYD devices act as low-latency, responsive tactile display surfaces with local gaze/touch interpolation.
 
 ---
 
-## 4. Network Transport
-* **Selected Technology**: Local WebSocket (Mac as Server, CYDs as Clients).
-* **Status**: **PROJECT DECISION**.
+## 5. Network Transport & Typed Messages
+* **Selected Technology**: Local WebSocket (Mac as Server, CYDs as Clients) with Zod Discriminated Union Envelope.
+* **Status**: **VERIFIED IN SCAFFOLD**.
 * **Rationale**:
   * Standard TCP WebSocket provides low latency (<5 ms on local Wi-Fi), framing, ping/pong keepalive, and predictable client reconnection.
-  * Eliminates UDP packet ordering issues and NAT traversal complications.
-  * Bandwidth is minimal (~3 KB/s per shell for 60 Hz Hand updates).
+  * Discriminated union envelope enforces message-specific payloads (`HAND_UPDATE` -> `HandState`, `FACE_SYNC` -> `FaceSyncPayload`), rejecting malformed payloads without crashing.
 
 ---
 
-## 5. macOS Pointer Portal Mechanism
-* **Selected Technology**: `CoreGraphics` `CGEventTap` + `CGWarpMouseCursorPosition` + `CGDisplayHideCursor`.
-* **Status**: **PROVISIONAL IMPLEMENTATION HYPOTHESIS** (Pending Milestone 1 runtime permissions & edge testing).
+## 6. Provisional Test Fixtures vs. Canonical Cast
+* **Decision**: All 9 entities (`fixture_weasel_01` .. `fixture_weasel_09`) are designated strictly as provisional development/test fixtures.
+* **Status**: **PROJECT DECISION**.
 * **Rationale**:
-  * Native macOS event taps allow detecting when pointer coordinates approach screen bounds.
-  * Hiding the system cursor and warping/pinning it prevents macOS mouse wander while virtual Hand coordinates are streamed to the CYD.
-  * Requires Accessibility permission (`AXIsProcessTrustedWithOptions`).
-
----
-
-## 6. System Audio Capture
-* **Selected Technology**: Apple `ScreenCaptureKit` (`SCStream`) audio-only capture + `Accelerate.framework` (vDSP).
-* **Status**: **PROVISIONAL IMPLEMENTATION HYPOTHESIS** (Pending Milestone 4 implementation).
-* **Rationale**:
-  * Modern Apple-supported API on macOS Sequoia that captures system audio (YouTube, Spotify, video) without third-party virtual audio cables (BlackHole, Soundflower).
-  * vDSP provides zero-overhead hardware-accelerated FFT and RMS energy calculation on Apple Silicon.
+  * Andrew has not yet canonically chosen or approved the final names, palettes, and personalities of the 9 Screen Weasels.
+  * The green face with orange accents (`fixture_weasel_01`) serves as the established discovery anchor.
+  * Stable IDs are used across protocol and code rather than decorative names.

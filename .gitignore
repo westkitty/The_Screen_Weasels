@@ -7,6 +7,7 @@ dist/
 build/
 .pio/
 .espidf/
+.platformio/
 
 # macOS
 .DS_Store
@@ -28,7 +29,10 @@ pnpm-debug.log*
 .env.local
 .env.*.local
 credentials.json
+
+# Hardware secrets
 wifi_secrets.h
+firmware/include/wifi_secrets.h
 
 # Swift build
 .build/

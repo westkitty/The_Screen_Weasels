@@ -4,11 +4,13 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "mock-device": "tsc && node dist/mock-device.js",
-    "mock-host": "tsc && node dist/mock-host.js"
+    "test:integration": "tsc && node --test dist/tools/integration-test.js",
+    "mock-device": "tsc && node dist/tools/mock-device.js",
+    "mock-host": "tsc && node dist/tools/mock-host.js"
   },
   "dependencies": {
     "@screen-weasels/protocol": "workspace:*",
+    "@screen-weasels/host": "workspace:*",
     "ws": "^8.18.1"
   },
   "devDependencies": {

@@ -59,6 +59,9 @@ importers:
 
   tools:
     dependencies:
+      '@screen-weasels/host':
+        specifier: workspace:*
+        version: link:../host-macos
       '@screen-weasels/protocol':
         specifier: workspace:*
         version: link:../protocol

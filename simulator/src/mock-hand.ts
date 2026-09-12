@@ -12,6 +12,7 @@ export class MockHandController {
     edgeGlow: 0,
   };
 
+  public dwellTime = 0; // Duration spent stationary in seconds
   private lastTime = performance.now();
   private lastX = 160;
   private lastY = 120;
@@ -22,6 +23,13 @@ export class MockHandController {
 
     const vx = (clientX - this.lastX) / dt;
     const vy = (clientY - this.lastY) / dt;
+    const speed = Math.hypot(vx, vy);
+
+    if (speed < 25) {
+      this.dwellTime += dt;
+    } else {
+      this.dwellTime = 0;
+    }
 
     this.state = {
       active: true,
@@ -39,11 +47,21 @@ export class MockHandController {
     this.lastTime = now;
   }
 
+  public updateIdleTime(dt: number) {
+    if (this.state.active) {
+      this.dwellTime += dt;
+      // Damp velocity toward 0
+      this.state.vx *= Math.exp(-dt * 6);
+      this.state.vy *= Math.exp(-dt * 6);
+    }
+  }
+
   public deactivate() {
     this.state.active = false;
     this.state.shellId = 'none';
     this.state.edgeGlow = 0;
     this.state.vx = 0;
     this.state.vy = 0;
+    this.dwellTime = 0;
   }
 }

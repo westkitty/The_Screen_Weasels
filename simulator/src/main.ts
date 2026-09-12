@@ -2,17 +2,31 @@ import type { FaceIdentity, FaceState } from '@screen-weasels/protocol';
 import { ShellView } from './shell-view.js';
 import { MockHandController } from './mock-hand.js';
 
-const IDENTITIES: FaceIdentity[] = [
-  { id: 'w1', name: 'Emerald-Snarl', primaryColor: '#10B981', accentColor: '#F97316', eyeShape: 'almond', toothType: 'sharp', traitSeed: 1 },
-  { id: 'w2', name: 'Cobalt-Stare', primaryColor: '#3B82F6', accentColor: '#FBBF24', eyeShape: 'circular', toothType: 'none', traitSeed: 2 },
-  { id: 'w3', name: 'Crimson-Scowl', primaryColor: '#EF4444', accentColor: '#FFFFFF', eyeShape: 'slanted', toothType: 'sharp', traitSeed: 3 },
-  { id: 'w4', name: 'Violet-Slink', primaryColor: '#8B5CF6', accentColor: '#34D399', eyeShape: 'squint', toothType: 'none', traitSeed: 4 },
-  { id: 'w5', name: 'Amber-Snap', primaryColor: '#F59E0B', accentColor: '#EC4899', eyeShape: 'circular', toothType: 'blunt', traitSeed: 5 },
-  { id: 'w6', name: 'Cyan-Ghost', primaryColor: '#06B6D4', accentColor: '#64748B', eyeShape: 'almond', toothType: 'blunt', traitSeed: 6 },
-  { id: 'w7', name: 'Rose-Flicker', primaryColor: '#F43F5E', accentColor: '#A855F7', eyeShape: 'slanted', toothType: 'none', traitSeed: 7 },
-  { id: 'w8', name: 'Gold-Mask', primaryColor: '#EAB308', accentColor: '#1E293B', eyeShape: 'squint', toothType: 'sharp', traitSeed: 8 },
-  { id: 'w9', name: 'Slate-Prowl', primaryColor: '#94A3B8', accentColor: '#E2E8F0', eyeShape: 'almond', toothType: 'none', traitSeed: 9 },
+/**
+ * PROVISIONAL FIXTURE IDENTITIES
+ * Used for development simulator and automated tests only.
+ * Andrew has not yet chosen the canonical target cast.
+ * fixture_weasel_01 represents the established green face with orange accents.
+ */
+const PROVISIONAL_FIXTURES: FaceIdentity[] = [
+  { id: 'fixture_weasel_01', name: 'Green-Orange-Anchor', primaryColor: '#10B981', accentColor: '#F97316', eyeShape: 'almond', toothType: 'sharp', traitSeed: 1 },
+  { id: 'fixture_weasel_02', name: 'Blue-Amber-Fixture', primaryColor: '#3B82F6', accentColor: '#FBBF24', eyeShape: 'circular', toothType: 'none', traitSeed: 2 },
+  { id: 'fixture_weasel_03', name: 'Red-White-Fixture', primaryColor: '#EF4444', accentColor: '#FFFFFF', eyeShape: 'slanted', toothType: 'sharp', traitSeed: 3 },
+  { id: 'fixture_weasel_04', name: 'Purple-Mint-Fixture', primaryColor: '#8B5CF6', accentColor: '#34D399', eyeShape: 'squint', toothType: 'none', traitSeed: 4 },
+  { id: 'fixture_weasel_05', name: 'Amber-Pink-Fixture', primaryColor: '#F59E0B', accentColor: '#EC4899', eyeShape: 'circular', toothType: 'blunt', traitSeed: 5 },
+  { id: 'fixture_weasel_06', name: 'Cyan-Slate-Fixture', primaryColor: '#06B6D4', accentColor: '#64748B', eyeShape: 'almond', toothType: 'blunt', traitSeed: 6 },
+  { id: 'fixture_weasel_07', name: 'Rose-Purple-Fixture', primaryColor: '#F43F5E', accentColor: '#A855F7', eyeShape: 'slanted', toothType: 'none', traitSeed: 7 },
+  { id: 'fixture_weasel_08', name: 'Gold-Navy-Fixture', primaryColor: '#EAB308', accentColor: '#1E293B', eyeShape: 'squint', toothType: 'sharp', traitSeed: 8 },
+  { id: 'fixture_weasel_09', name: 'Slate-Silver-Fixture', primaryColor: '#94A3B8', accentColor: '#E2E8F0', eyeShape: 'almond', toothType: 'none', traitSeed: 9 },
 ];
+
+interface CreatureEntity {
+  identity: FaceIdentity;
+  state: FaceState;
+  targetGazeX: number;
+  targetGazeY: number;
+  nextGazeShiftTime: number; // Seconds until next scheduled gaze shift
+}
 
 class SimulatorEngine {
   private shellA: ShellView;
@@ -20,49 +34,56 @@ class SimulatorEngine {
   private hand = new MockHandController();
   private debug = false;
   private faceCount = 1;
-  private facesA: { identity: FaceIdentity; state: FaceState }[] = [];
-  private facesB: { identity: FaceIdentity; state: FaceState }[] = [];
+  private creaturesA: CreatureEntity[] = [];
+  private creaturesB: CreatureEntity[] = [];
   private fpsLabel: HTMLElement;
   private frameCount = 0;
   private lastFpsUpdate = performance.now();
+  private lastFrameTime = performance.now();
 
   constructor() {
     this.shellA = new ShellView('shell_a', 'canvas-a', 'glow-a');
     this.shellB = new ShellView('shell_b', 'canvas-b', 'glow-b');
     this.fpsLabel = document.getElementById('fps-label')!;
 
-    this.initFaces();
+    this.initCreatures();
     this.setupEventListeners();
     this.loop();
   }
 
-  private initFaces() {
-    this.facesA = [];
-    this.facesB = [];
+  private initCreatures() {
+    this.creaturesA = [];
+    this.creaturesB = [];
 
-    const activeList = IDENTITIES.slice(0, this.faceCount);
+    const activeList = PROVISIONAL_FIXTURES.slice(0, this.faceCount);
 
     activeList.forEach((identity, i) => {
       const isShellA = i % 2 === 0;
-      const faceState: FaceState = {
-        id: identity.id,
-        x: 160 + (Math.random() - 0.5) * 60,
-        y: 120 + (Math.random() - 0.5) * 40,
-        vx: 0,
-        vy: 0,
-        scale: this.faceCount === 1 ? 1.4 : this.faceCount <= 3 ? 1.0 : 0.65,
-        gazeX: 0,
-        gazeY: 0,
-        mouthOpen: 0,
-        browAngle: 0,
-        expression: 'idle',
-        grabbed: false,
+      const entity: CreatureEntity = {
+        identity,
+        state: {
+          id: identity.id,
+          x: 160 + (Math.random() - 0.5) * 60,
+          y: 120 + (Math.random() - 0.5) * 40,
+          vx: 0,
+          vy: 0,
+          scale: this.faceCount === 1 ? 1.4 : this.faceCount <= 3 ? 1.0 : 0.65,
+          gazeX: 0,
+          gazeY: 0,
+          mouthOpen: 0,
+          browAngle: 0,
+          expression: 'idle',
+          grabbed: false,
+        },
+        targetGazeX: 0,
+        targetGazeY: 0,
+        nextGazeShiftTime: 1.5 + Math.random() * 2.0, // 1.5 - 3.5s real time
       };
 
       if (isShellA || this.faceCount === 1) {
-        this.facesA.push({ identity, state: faceState });
+        this.creaturesA.push(entity);
       } else {
-        this.facesB.push({ identity, state: faceState });
+        this.creaturesB.push(entity);
       }
     });
   }
@@ -97,12 +118,12 @@ class SimulatorEngine {
     });
 
     document.getElementById('btn-migrate')?.addEventListener('click', () => {
-      if (this.facesA.length > 0) {
-        const moved = this.facesA.pop()!;
-        this.facesB.push(moved);
-      } else if (this.facesB.length > 0) {
-        const moved = this.facesB.pop()!;
-        this.facesA.push(moved);
+      if (this.creaturesA.length > 0) {
+        const moved = this.creaturesA.pop()!;
+        this.creaturesB.push(moved);
+      } else if (this.creaturesB.length > 0) {
+        const moved = this.creaturesB.pop()!;
+        this.creaturesA.push(moved);
       }
     });
   }
@@ -112,58 +133,85 @@ class SimulatorEngine {
     ['btn-face-1', 'btn-face-3', 'btn-face-9'].forEach(id => {
       document.getElementById(id)?.classList.toggle('active', id === activeBtnId);
     });
-    this.initFaces();
+    this.initCreatures();
   }
 
-  private updateCreatures(faces: { identity: FaceIdentity; state: FaceState }[], shellId: 'shell_a' | 'shell_b') {
+  private updateCreatures(creatures: CreatureEntity[], shellId: 'shell_a' | 'shell_b', dt: number) {
     const hand = this.hand.state;
     const handInThisShell = hand.active && hand.shellId === shellId;
     const handSpeed = Math.hypot(hand.vx, hand.vy);
+    const dwell = this.hand.dwellTime;
 
-    for (const { state } of faces) {
+    for (const entity of creatures) {
+      const { state } = entity;
+
       if (handInThisShell) {
         const dx = hand.x - state.x;
         const dy = hand.y - state.y;
         const dist = Math.hypot(dx, dy) || 1;
 
-        // Gaze tracking
-        state.gazeX = Math.max(-1, Math.min(1, (dx / dist) * 0.9));
-        state.gazeY = Math.max(-1, Math.min(1, (dy / dist) * 0.9));
+        // Target gaze locks onto Hand
+        entity.targetGazeX = Math.max(-1, Math.min(1, (dx / dist) * 0.95));
+        entity.targetGazeY = Math.max(-1, Math.min(1, (dy / dist) * 0.95));
 
-        if (handSpeed > 400) {
+        // State classification based on velocity and dwell time
+        if (handSpeed > 350) {
+          // Fast sweep -> Startled (Pupils dilate, mouth drops open)
           state.expression = 'startled';
-          state.mouthOpen = 0.8;
-        } else if (handSpeed > 100) {
+          state.mouthOpen = Math.min(1.0, state.mouthOpen + dt * 6.0);
+        } else if (handSpeed > 30) {
+          // Slow deliberate movement -> Curious
           state.expression = 'curious';
           state.mouthOpen = 0.2;
-        } else {
+        } else if (dwell > 0.6) {
+          // Hand stationary / dwelling for > 0.6s -> Settles into watchful idle
           state.expression = 'idle';
-          state.mouthOpen = 0.05;
+          state.mouthOpen = Math.max(0, state.mouthOpen - dt * 2.0);
         }
+
+        // Fast gaze snap when Hand is active
+        const gazeLerpRate = state.expression === 'startled' ? 18.0 : 8.0;
+        state.gazeX += (entity.targetGazeX - state.gazeX) * Math.min(1.0, dt * gazeLerpRate);
+        state.gazeY += (entity.targetGazeY - state.gazeY) * Math.min(1.0, dt * gazeLerpRate);
       } else {
-        // Natural idle gaze drift
-        if (Math.random() < 0.02) {
-          state.gazeX = (Math.random() - 0.5) * 0.8;
-          state.gazeY = (Math.random() - 0.5) * 0.5;
+        // Hand not present: Time-based natural idle gaze schedule (1.5 - 3.5 seconds)
+        entity.nextGazeShiftTime -= dt;
+        if (entity.nextGazeShiftTime <= 0) {
+          entity.targetGazeX = (Math.random() - 0.5) * 0.8;
+          entity.targetGazeY = (Math.random() - 0.5) * 0.5;
+          entity.nextGazeShiftTime = 1.5 + Math.random() * 2.0;
         }
+
+        // Smooth continuous interpolation toward scheduled target (no sudden frame jumps)
+        state.gazeX += (entity.targetGazeX - state.gazeX) * Math.min(1.0, dt * 3.5);
+        state.gazeY += (entity.targetGazeY - state.gazeY) * Math.min(1.0, dt * 3.5);
+
         state.expression = 'idle';
-        state.mouthOpen = Math.max(0, state.mouthOpen - 0.05);
+        state.mouthOpen = Math.max(0, state.mouthOpen - dt * 1.5);
       }
     }
   }
 
   private loop = () => {
-    this.updateCreatures(this.facesA, 'shell_a');
-    this.updateCreatures(this.facesB, 'shell_b');
+    const now = performance.now();
+    const dt = Math.min(0.1, Math.max(0.001, (now - this.lastFrameTime) / 1000));
+    this.lastFrameTime = now;
 
-    this.shellA.render(this.facesA, this.debug);
-    this.shellB.render(this.facesB, this.debug);
+    this.hand.updateIdleTime(dt);
+
+    this.updateCreatures(this.creaturesA, 'shell_a', dt);
+    this.updateCreatures(this.creaturesB, 'shell_b', dt);
+
+    this.shellA.render(this.creaturesA, this.debug);
+    this.shellB.render(this.creaturesB, this.debug);
 
     this.frameCount++;
-    const now = performance.now();
     if (now - this.lastFpsUpdate >= 500) {
       const fps = Math.round((this.frameCount * 1000) / (now - this.lastFpsUpdate));
-      this.fpsLabel.textContent = `FPS: ${fps} | Hand: ${this.hand.state.active ? `${this.hand.state.shellId} (${Math.round(this.hand.state.x)}, ${Math.round(this.hand.state.y)})` : 'Inactive'}`;
+      const handStateDesc = this.hand.state.active
+        ? `${this.hand.state.shellId} (spd=${Math.round(Math.hypot(this.hand.state.vx, this.hand.state.vy))}, dwell=${this.hand.dwellTime.toFixed(1)}s)`
+        : 'Inactive';
+      this.fpsLabel.textContent = `FPS: ${fps} | Hand: ${handStateDesc}`;
       this.frameCount = 0;
       this.lastFpsUpdate = now;
     }
