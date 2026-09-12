@@ -1,0 +1,19 @@
+{
+  "name": "the-screen-weasels",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Two neighboring physical worlds inhabited by persistent 2D creatures across ESP32 CYD screens.",
+  "scripts": {
+    "build": "pnpm -r run build",
+    "test": "pnpm --filter @screen-weasels/protocol test",
+    "simulator": "pnpm --filter @screen-weasels/simulator dev",
+    "host": "pnpm --filter @screen-weasels/host dev",
+    "lint": "echo 'Linting workspace...' && pnpm -r --if-present run lint"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.2"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

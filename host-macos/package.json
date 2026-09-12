@@ -1,0 +1,20 @@
+{
+  "name": "@screen-weasels/host",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc && node dist/index.js",
+    "mock-portal": "tsc && node dist/mock-portal.js"
+  },
+  "dependencies": {
+    "@screen-weasels/protocol": "workspace:*",
+    "ws": "^8.18.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.2",
+    "@types/node": "^22.13.9",
+    "@types/ws": "^8.5.14"
+  }
+}

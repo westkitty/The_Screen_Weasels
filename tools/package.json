@@ -1,0 +1,19 @@
+{
+  "name": "@screen-weasels/tools",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "mock-device": "tsc && node dist/mock-device.js",
+    "mock-host": "tsc && node dist/mock-host.js"
+  },
+  "dependencies": {
+    "@screen-weasels/protocol": "workspace:*",
+    "ws": "^8.18.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.2",
+    "@types/node": "^22.13.9",
+    "@types/ws": "^8.5.14"
+  }
+}
