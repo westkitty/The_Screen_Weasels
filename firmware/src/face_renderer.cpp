@@ -28,7 +28,7 @@ LGFX_CYD::LGFX_CYD() {
         cfg.offset_rotation  = 1; // Landscape
         cfg.readable         = true;
         cfg.invert           = false;
-        cfg.rgb_order        = false;
+        cfg.rgb_order        = true;
         cfg.dlen_16bit       = false;
         cfg.bus_shared       = false;
         _panel_instance.config(cfg);

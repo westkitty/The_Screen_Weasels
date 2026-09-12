@@ -44,3 +44,42 @@
 4. **USB-C Data Lines**:
    * Verify whether the USB-C port is data+power or power-only (some early units have micro-USB for UART and USB-C for power).
    * If the user's unit has single/dual USB-C, verify connection to the CH340 / CP2102 chip.
+
+---
+
+## 3. Milestone 0 Physical Verification — CYD #1
+
+Physical verification completed 2026-09-12 on the first project board.
+
+| Item | Verified Result |
+| :--- | :--- |
+| **Board silkscreen** | `ESP32-2432S028` |
+| **MCU** | ESP32-D0WD-V3 rev 3.1, dual-core, 240 MHz, 40 MHz crystal |
+| **Flash** | 4 MB, 3.3 V |
+| **PSRAM** | None detected |
+| **USB serial bridge** | WCH CH340/CH341-family, USB VID:PID `1a86:7523` |
+| **Display profile** | LovyanGFX ILI9341 profile physically drives the panel |
+| **Native panel geometry** | 240x320 |
+| **Runtime orientation** | 320x240 landscape |
+| **Color order** | `rgb_order = true` required for correct red/orange rendering |
+| **Backlight** | GPIO 21, non-inverted PWM configuration works |
+| **Touch** | XPT2046 configuration and dedicated SPI mapping physically functional |
+| **Touch coverage** | Center plus all four display corners verified |
+| **Firmware upload** | 115200 baud reliable |
+| **921600 upload** | Unreliable on this exact unit / serial path |
+| **Wi-Fi** | Association and DHCP verified; measured RSSI -60 dBm |
+| **Free heap before Wi-Fi** | 304328 bytes |
+| **Free heap after Wi-Fi** | 253608 bytes |
+| **Factory flash backup** | Full 4 MB image retained locally |
+| **Factory backup SHA-256** | `e2bf7e4c65a15ea7f6855c742a394e3259d86ef2a91ac0850147fe5547f93923` |
+
+The ILI9341 profile is empirically functional on this unit. The display
+controller identity has not been independently read from its ID registers,
+so this is recorded as a verified working profile rather than direct
+controller-silicon identification.
+
+Display, touch, backlight, serial flashing, flash capacity, PSRAM state,
+Wi-Fi, orientation, and color order are no longer provisional for CYD #1.
+
+The rear RGB LED, LDR, audio output, and microSD interface remain physically
+untested.

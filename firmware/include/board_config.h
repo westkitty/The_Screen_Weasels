@@ -19,8 +19,8 @@
 #define CYD_TFT_RST      -1  // Connected to EN
 #define CYD_TFT_BL       21  // Backlight PWM (active polarity to be verified)
 
-#define CYD_SCREEN_WIDTH  320
-#define CYD_SCREEN_HEIGHT 240
+#define CYD_SCREEN_WIDTH  240
+#define CYD_SCREEN_HEIGHT 320
 
 // Touch Controller (XPT2046 on dedicated SPI pins)
 #define CYD_TOUCH_CS     33
