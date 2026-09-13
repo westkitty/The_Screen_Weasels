@@ -1,8 +1,8 @@
 # PROJECT STATE — The Screen Weasels
 
-Last Updated: 2026-09-12 — Milestone 1 Physical Hand Rendering Proof
+Last Updated: 2026-09-13 — Milestone 1 Portal Visual Physically Approved
 Current Branch: main
-Current Milestone: Milestone 1 (Cursor Portal) — Physical Hand Rendering Verified; Visual Tuning & Virtual Continuation Pending
+Current Milestone: Milestone 1 (Cursor Portal) — Portal Visual Approved; Virtual Continuation Pending
 
 ---
 
@@ -119,13 +119,17 @@ Verified on physical CYD #1:
   and can re-enable its event tap if macOS disables it.
 - A less-obtrusive blue/cyan portal-halo implementation has been compiled and
   flashed to CYD #1 and receives correctly mapped vertical Hand positions.
-- Portal visual tuning remains provisional and is not yet considered final.
+- The localized blue/cyan portal seam and halo were physically reviewed on
+  CYD #1 at multiple entry heights and approved on 2026-09-13. The effect is
+  visible without overwhelming the black void, follows the cursor entry Y,
+  reads as a localized opening rather than a HUD border, attracts the Weasel's
+  eyes, and clears without observed stale pixels or corruption.
 - Hand X remains at the entry boundary; continued virtual cursor movement
   inside Weasel space has not yet been implemented.
 - CYD #2 has not been started and is explicitly deferred at this checkpoint.
 
-Resume from CYD #1. First visually review/tune the readable portal effect.
-After that, implement continued virtual Hand movement beyond the Mac edge.
+Resume from CYD #1 by implementing continued virtual Hand movement beyond the
+Mac edge using the physically approved portal effect unchanged.
 Do not treat CYD #2 as the next automatic task.
 
 
