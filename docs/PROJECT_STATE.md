@@ -1,8 +1,8 @@
 # PROJECT STATE — The Screen Weasels
 
-Last Updated: 2026-09-12 — Milestone 1 Physical Hand Transport
+Last Updated: 2026-09-12 — Milestone 1 Physical Hand Rendering Proof
 Current Branch: main
-Current Milestone: Milestone 1 (Cursor Portal) — Physical HAND_UPDATE Transport Verified; Visible Portal Pending
+Current Milestone: Milestone 1 (Cursor Portal) — Physical Hand Rendering Verified; Visual Tuning & Virtual Continuation Pending
 
 ---
 
@@ -99,6 +99,34 @@ physical ESP32 shell.
 This does not yet prove visible cursor continuation inside Weasel space.
 Virtual Hand movement beyond the Mac edge, perimeter glow, face attention,
 and physical gaze response remain pending.
+
+
+### M1 Checkpoint — Physical Hand Rendering Proof
+
+Verified on physical CYD #1:
+
+- Physical `HAND_UPDATE` packets are decoded into firmware Hand state.
+- The firmware main loop consumes Hand state and invokes the physical renderer.
+- Serial instrumentation confirms active/inactive Hand transitions and mapped
+  gaze values on the actual CYD.
+- A deliberately high-visibility cyan diagnostic was physically rendered on
+  CYD #1 in direct response to Mac cursor edge crossings.
+- This verifies the complete path from physical Mac mouse movement through
+  CoreGraphics, the native bridge, Node host, WebSocket/Wi-Fi transport,
+  ESP32 parsing, Hand-state consumption, renderer invocation, and physical
+  display writes.
+- The native CoreGraphics bridge now reports the first received mouse event
+  and can re-enable its event tap if macOS disables it.
+- A less-obtrusive blue/cyan portal-halo implementation has been compiled and
+  flashed to CYD #1 and receives correctly mapped vertical Hand positions.
+- Portal visual tuning remains provisional and is not yet considered final.
+- Hand X remains at the entry boundary; continued virtual cursor movement
+  inside Weasel space has not yet been implemented.
+- CYD #2 has not been started and is explicitly deferred at this checkpoint.
+
+Resume from CYD #1. First visually review/tune the readable portal effect.
+After that, implement continued virtual Hand movement beyond the Mac edge.
+Do not treat CYD #2 as the next automatic task.
 
 
 Milestone 1 is the cursor portal:

@@ -89,6 +89,52 @@ void setup() {
 void loop() {
     loopNetwork();
 
+    WeaselHandState hand;
+
+    if (
+        consumeLatestHandState(&hand)
+    ) {
+        float gazeX = 0.0f;
+        float gazeY = 0.0f;
+        float mouthOpen = 0.0f;
+
+        if (hand.active) {
+            gazeX = -1.8f;
+
+            gazeY =
+                (hand.y - 120.0f) /
+                120.0f;
+
+            gazeY =
+                constrain(
+                    gazeY,
+                    -1.0f,
+                    1.0f
+                );
+
+            mouthOpen = 0.15f;
+        }
+
+        renderer.renderDiagnosticFace(
+            gazeX,
+            gazeY,
+            mouthOpen
+        );
+
+        renderer.renderPortalHand(
+            hand
+        );
+
+        Serial.printf(
+            "[Hand] VISUAL active=%s x=%.1f y=%.1f gaze=(%.2f, %.2f)\n",
+            hand.active ? "true" : "false",
+            hand.x,
+            hand.y,
+            gazeX,
+            gazeY
+        );
+    }
+
     uint16_t touchX = 0;
     uint16_t touchY = 0;
 

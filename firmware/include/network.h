@@ -1,4 +1,5 @@
 #pragma once
+#include "weasel_protocol.h"
 
 void setupNetwork(
     const char* ssid,
@@ -8,3 +9,7 @@ void setupNetwork(
 );
 
 void loopNetwork();
+
+bool consumeLatestHandState(
+    WeaselHandState* out
+);

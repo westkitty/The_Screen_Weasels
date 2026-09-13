@@ -23,7 +23,10 @@ private func cursorPortalEventCallback(
         .fromOpaque(refcon)
         .takeUnretainedValue()
 
-    monitor.handle(event: event)
+    monitor.handle(
+        type: type,
+        event: event
+    )
 
     return Unmanaged.passUnretained(event)
 }
@@ -35,6 +38,7 @@ public final class CursorPortalMonitor {
     private var runLoopSource: CFRunLoopSource?
     private var crossingHandler: ((CGFloat, CGFloat) -> Void)?
     private var edgeStateHandler: ((Bool, CGFloat, CGFloat, Int64, Int64) -> Void)?
+    private var sawFirstMouseEvent = false
 
     private let edge: PortalEdge
     private let threshold: CGFloat
@@ -130,9 +134,47 @@ public final class CursorPortalMonitor {
         )
     }
 
-    fileprivate func handle(event: CGEvent) {
+    fileprivate func handle(
+        type: CGEventType,
+        event: CGEvent
+    ) {
+        if (
+            type == .tapDisabledByTimeout ||
+            type == .tapDisabledByUserInput
+        ) {
+            let reason =
+                type == .tapDisabledByTimeout
+                ? "timeout"
+                : "user-input"
+
+            print(
+                "[Portal] WARNING: Event tap disabled " +
+                "reason=\(reason); re-enabling."
+            )
+
+            if let tap = eventTap {
+                CGEvent.tapEnable(
+                    tap: tap,
+                    enable: true
+                )
+            }
+
+            return
+        }
+
         let point = event.location
         let bounds = CGDisplayBounds(CGMainDisplayID())
+
+        if !sawFirstMouseEvent {
+            sawFirstMouseEvent = true
+
+            print(
+                "[Portal] Mouse stream ACTIVE " +
+                "first=(\(Int(point.x)),\(Int(point.y))) " +
+                "display=(\(Int(bounds.minX)),\(Int(bounds.minY)))" +
+                "-(\(Int(bounds.maxX)),\(Int(bounds.maxY)))"
+            )
+        }
 
         let dx = event.getIntegerValueField(
             .mouseEventDeltaX

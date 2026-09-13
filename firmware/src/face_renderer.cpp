@@ -116,3 +116,155 @@ void FaceRenderer::drawEdgeGlow(float intensity) {
     _gfx->drawRect(0, 0, 320, 240, glowColor);
     _gfx->drawRect(1, 1, 318, 238, glowColor);
 }
+
+void FaceRenderer::renderPortalHand(
+    const WeaselHandState& hand
+) {
+    uint16_t black = TFT_BLACK;
+
+    uint16_t deepBlue =
+        _gfx->color565(
+            0,
+            22,
+            48
+        );
+
+    uint16_t dimBlue =
+        _gfx->color565(
+            0,
+            65,
+            110
+        );
+
+    uint16_t cobalt =
+        _gfx->color565(
+            0,
+            125,
+            190
+        );
+
+    uint16_t cyan =
+        _gfx->color565(
+            0,
+            220,
+            255
+        );
+
+    _gfx->fillRect(
+        0,
+        0,
+        46,
+        240,
+        black
+    );
+
+    if (!hand.active) {
+        return;
+    }
+
+    int handY =
+        constrain(
+            (int)hand.y,
+            10,
+            229
+        );
+
+    _gfx->fillRect(
+        0,
+        0,
+        2,
+        240,
+        cyan
+    );
+
+    _gfx->fillRect(
+        2,
+        0,
+        2,
+        240,
+        cobalt
+    );
+
+    _gfx->fillRect(
+        4,
+        0,
+        3,
+        240,
+        dimBlue
+    );
+
+    _gfx->fillRect(
+        7,
+        0,
+        4,
+        240,
+        deepBlue
+    );
+
+    _gfx->fillCircle(
+        0,
+        handY,
+        34,
+        deepBlue
+    );
+
+    _gfx->fillCircle(
+        0,
+        handY,
+        25,
+        dimBlue
+    );
+
+    _gfx->fillCircle(
+        0,
+        handY,
+        17,
+        cobalt
+    );
+
+    _gfx->fillCircle(
+        0,
+        handY,
+        10,
+        cyan
+    );
+
+    _gfx->fillCircle(
+        8,
+        handY,
+        6,
+        cyan
+    );
+
+    _gfx->fillCircle(
+        8,
+        handY,
+        2,
+        TFT_WHITE
+    );
+
+    _gfx->drawFastHLine(
+        0,
+        handY,
+        25,
+        cyan
+    );
+
+    if (handY > 0) {
+        _gfx->drawFastHLine(
+            0,
+            handY - 1,
+            17,
+            cobalt
+        );
+    }
+
+    if (handY < 239) {
+        _gfx->drawFastHLine(
+            0,
+            handY + 1,
+            17,
+            cobalt
+        );
+    }
+}

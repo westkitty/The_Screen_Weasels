@@ -19,6 +19,9 @@ public:
     void init();
     void renderDiagnosticFace(float gazeX, float gazeY, float mouthOpen);
     void drawEdgeGlow(float intensity);
+    void renderPortalHand(
+        const WeaselHandState& hand
+    );
     void clear();
 
 private:

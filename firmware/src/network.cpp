@@ -10,6 +10,9 @@ static bool networkStarted = false;
 static bool wsConnected = false;
 static uint32_t outboundSeq = 0;
 
+static WeaselHandState latestHandState{};
+static bool handStatePending = false;
+
 static constexpr const char* SHELL_ID = "shell_a";
 static constexpr const char* FIRMWARE_VERSION = "0.2.0-m1";
 
@@ -49,6 +52,57 @@ static void handleText(uint8_t* payload, size_t length) {
     }
 
     const char* type = doc["type"] | "UNKNOWN";
+
+    if (strcmp(type, "HAND_UPDATE") == 0) {
+        JsonObject hand =
+            doc["payload"].as<JsonObject>();
+
+        latestHandState.active =
+            hand["active"] | false;
+
+        const char* shellId =
+            hand["shellId"] | "none";
+
+        strncpy(
+            latestHandState.shellId,
+            shellId,
+            sizeof(latestHandState.shellId) - 1
+        );
+
+        latestHandState.shellId[
+            sizeof(latestHandState.shellId) - 1
+        ] = '\0';
+
+        latestHandState.x =
+            hand["x"] | 0.0f;
+
+        latestHandState.y =
+            hand["y"] | 0.0f;
+
+        latestHandState.vx =
+            hand["vx"] | 0.0f;
+
+        latestHandState.vy =
+            hand["vy"] | 0.0f;
+
+        latestHandState.clicked =
+            hand["clicked"] | false;
+
+        latestHandState.edgeGlow =
+            hand["edgeGlow"] | 0.0f;
+
+        handStatePending = true;
+
+        Serial.printf(
+            "[WS] HAND_UPDATE received: active=%s x=%.1f y=%.1f glow=%.2f\n",
+            latestHandState.active ? "true" : "false",
+            latestHandState.x,
+            latestHandState.y,
+            latestHandState.edgeGlow
+        );
+
+        return;
+    }
 
     if (strcmp(type, "FACE_SYNC") == 0) {
         JsonArray faces = doc["payload"]["faces"].as<JsonArray>();
@@ -148,4 +202,20 @@ void loopNetwork() {
     }
 
     webSocket.loop();
+}
+
+bool consumeLatestHandState(
+    WeaselHandState* out
+) {
+    if (
+        out == nullptr ||
+        !handStatePending
+    ) {
+        return false;
+    }
+
+    *out = latestHandState;
+    handStatePending = false;
+
+    return true;
 }
