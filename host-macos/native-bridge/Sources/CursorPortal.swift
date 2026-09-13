@@ -34,6 +34,7 @@ public final class CursorPortalMonitor {
     private var eventTap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
     private var crossingHandler: ((CGFloat, CGFloat) -> Void)?
+    private var edgeStateHandler: ((Bool, CGFloat, CGFloat, Int64, Int64) -> Void)?
 
     private let edge: PortalEdge
     private let threshold: CGFloat
@@ -61,7 +62,8 @@ public final class CursorPortalMonitor {
     }
 
     public func startMonitoring(
-        onCrossing: @escaping (CGFloat, CGFloat) -> Void
+        onCrossing: @escaping (CGFloat, CGFloat) -> Void,
+        onEdgeState: ((Bool, CGFloat, CGFloat, Int64, Int64) -> Void)? = nil
     ) {
         guard checkAccessibilityPermissions() else {
             print(
@@ -71,6 +73,7 @@ public final class CursorPortalMonitor {
         }
 
         crossingHandler = onCrossing
+        edgeStateHandler = onEdgeState
 
         let eventMask =
             (CGEventMask(1) << CGEventType.mouseMoved.rawValue) |
@@ -174,10 +177,26 @@ public final class CursorPortalMonitor {
                 point.x,
                 point.y
             )
+
+            edgeStateHandler?(
+                true,
+                point.x,
+                point.y,
+                dx,
+                dy
+            )
         }
 
         if !atEdge && isEdgeGlowActive {
             isEdgeGlowActive = false
+
+            edgeStateHandler?(
+                false,
+                point.x,
+                point.y,
+                dx,
+                dy
+            )
 
             print(
                 "[Portal] EDGE_EXIT " +

@@ -1,8 +1,8 @@
 # PROJECT STATE — The Screen Weasels
 
-Last Updated: 2026-09-12 — Milestone 0 Physical Hardware Proof
+Last Updated: 2026-09-12 — Milestone 1 Physical Hand Transport
 Current Branch: main
-Current Milestone: Milestone 1 (Cursor Portal) — Physical Heartbeat + macOS Edge Detection Verified
+Current Milestone: Milestone 1 (Cursor Portal) — Physical HAND_UPDATE Transport Verified; Visible Portal Pending
 
 ---
 
@@ -14,7 +14,7 @@ Current Milestone: Milestone 1 (Cursor Portal) — Physical Heartbeat + macOS Ed
 | **Protocol Schemas & Serialization** | Verified | **VERIFIED BY AUTOMATED TEST** | Zod schemas for Hand, SyncedFace, Audio, ShellHello, Touch, and discriminated envelope pass 5 unit tests. |
 | **Host-Shell Mock Integration** | Verified | **VERIFIED BY AUTOMATED TEST** | Automated integration test (`tools/integration-test.ts`) verifies WebSocket handshake, `SHELL_HELLO`, `FACE_SYNC`, `TOUCH_EVENT`, and rejection of malformed packets. |
 | **Desktop Simulator** | Functional | **SIMULATOR RUNTIME VERIFIED** | Dual 320x240 viewports running Vite engine with time-based kinematics, fast sweep startle ($v > 350\text{ px/s}$), startle pupil dilation, slow approach curiosity, dwell settling ($v < 25\text{ px/s}$ for $> 0.6\text{s}$), and scheduled idle gaze drift (1.5–3.5s). |
-| **Swift Native Bridge** | Compiles Cleanly | **COMPILED ONLY** | `weasel-bridge` compiles and links against `CoreGraphics` and `Accelerate` on Apple Silicon. Runtime `CGEventTap` and `ScreenCaptureKit` permissions unverified. |
+| **Swift Native Bridge** | Cursor Runtime Verified | **PHYSICAL HOST VERIFIED** | Accessibility permission and `CGEventTap` cursor-edge capture physically verified. Background capture requires a pseudo-TTY; the Node host launches the bridge through `/usr/bin/script`. ScreenCaptureKit/audio remains unverified. |
 | **ESP32 Firmware** | Running on CYD #1 | **PHYSICAL HARDWARE VERIFIED** | Firmware physically flashed, hash-verified, booted, and rendered successfully on ESP32-D0WD-V3 rev 3.1. |
 | **Physical CYD Display & Touch** | Verified on CYD #1 | **PHYSICAL HARDWARE VERIFIED** | 240x320 native geometry, 320x240 landscape runtime, backlight, color order, XPT2046 touch, center, and all four corner regions physically verified. |
 | **Physical Wi-Fi Radio on CYD** | Verified on CYD #1 | **PHYSICAL HARDWARE VERIFIED** | Successful association and DHCP; measured RSSI -60 dBm. Heap remained healthy after Wi-Fi initialization. |
@@ -76,6 +76,29 @@ Verified on the MacBook Air:
 This proves the host can detect the boundary where the macOS cursor transitions
 into the Weasel-world Hand. Continued motion inside the Weasel world and
 physical CYD Hand rendering remain pending.
+
+
+### M1 Checkpoint — Physical Hand Transport
+
+Verified end-to-end with physical CYD #1:
+
+- The trusted macOS native bridge captures the configured right-edge event.
+- Background CoreGraphics capture requires a pseudo-TTY on this Mac.
+- The Node host launches the native bridge through `/usr/bin/script`.
+- The bridge emits machine-readable `HandState` data.
+- The host validates the Hand state against the shared protocol schema.
+- The host broadcasts `HAND_UPDATE` over the existing WebSocket connection.
+- Physical CYD #1 repeatedly receives `HAND_UPDATE`.
+- Automated proof assertions passed for the macOS edge event, Node broadcast,
+  and physical CYD receipt.
+
+This proves the complete event-transport path from physical mouse movement,
+through macOS CoreGraphics and the authoritative host, across Wi-Fi, to the
+physical ESP32 shell.
+
+This does not yet prove visible cursor continuation inside Weasel space.
+Virtual Hand movement beyond the Mac edge, perimeter glow, face attention,
+and physical gaze response remain pending.
 
 
 Milestone 1 is the cursor portal:
