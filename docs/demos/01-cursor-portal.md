@@ -11,20 +11,22 @@ Demonstrate the seamless cursor portal: moving the macOS mouse pointer off the M
 ## Execution Steps
 1. Launch Host:
    ```bash
-   pnpm host
+   WEASEL_PORT=18765 pnpm host
    ```
 2. Observe CYD connect and log `SHELL_HELLO`.
 3. Move Mac cursor to the right display border.
 4. Push past the border threshold.
 
 ## Expected Behavior
-* Edge glow illuminates on CYD perimeter.
-* Mac cursor disappears.
-* Face gaze locks onto the Hand's entry point.
-* Fast mouse motion startles the face (brows rise, mouth drops).
-* Slow mouse motion produces gentle curiosity.
-* Moving mouse back left exits the CYD and restores the normal macOS cursor.
+* The localized portal appears at the CYD's physical right seam and follows the entry Y position.
+* The Hand activates at the seam and continued physical mouse deltas move it through the 320x240 CYD space.
+* Horizontal, vertical, and diagonal motion remain bounded and directionally coherent.
+* Face gaze follows the Hand's actual position.
+* Reverse horizontal motion returns the Hand through the right seam and deactivates it.
+* Re-entry starts at the new edge-entry Y without stale marker trails, flicker, or display corruption.
+* The ordinary macOS pointer may remain visible; cursor hiding and confinement are later polish, not Milestone 1 requirements.
 
 ## PASS Criteria
-* Latency from border crossing to CYD edge glow is <50 ms.
-* Transition feels like a continuous physical portal.
+* The right-edge portal and moving Hand remain responsive and visually continuous on physical CYD #1.
+* The Hand reaches the useful width and height, gaze follows it, return deactivates cleanly, and repeated entries remain stable.
+* Physical observation, not host or serial logs alone, determines the visual pass.

@@ -19,6 +19,7 @@ public:
     void init();
     void renderDiagnosticFace(float gazeX, float gazeY, float mouthOpen);
     void drawEdgeGlow(float intensity);
+    void clearPreviousPortalHand();
     void renderPortalHand(
         const WeaselHandState& hand
     );
@@ -26,4 +27,8 @@ public:
 
 private:
     LGFX_CYD* _gfx;
+    bool _previousHandActive = false;
+    int _previousHandX = 0;
+    int _previousHandY = 0;
+    int _portalY = 120;
 };

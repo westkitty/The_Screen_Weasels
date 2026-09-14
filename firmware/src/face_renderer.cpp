@@ -21,11 +21,13 @@ LGFX_CYD::LGFX_CYD() {
         auto cfg = _panel_instance.config();
         cfg.pin_cs           = CYD_TFT_CS;
         cfg.pin_rst          = CYD_TFT_RST;
-        cfg.panel_width      = CYD_SCREEN_WIDTH;
-        cfg.panel_height     = CYD_SCREEN_HEIGHT;
+        cfg.panel_width      = CYD_RUNTIME_WIDTH;
+        cfg.panel_height     = CYD_RUNTIME_HEIGHT;
+        cfg.memory_width     = CYD_RUNTIME_WIDTH;
+        cfg.memory_height    = CYD_RUNTIME_HEIGHT;
         cfg.offset_x         = 0;
         cfg.offset_y         = 0;
-        cfg.offset_rotation  = 1; // Landscape
+        cfg.offset_rotation  = 0;
         cfg.readable         = true;
         cfg.invert           = false;
         cfg.rgb_order        = true;
@@ -66,7 +68,9 @@ FaceRenderer::FaceRenderer(LGFX_CYD* display) : _gfx(display) {}
 
 void FaceRenderer::init() {
     _gfx->init();
-    _gfx->setRotation(1);
+    // Rotation 6 keeps MV=0 while selecting the upright, unmirrored landscape
+    // orientation on this CYD's ILI9341 mounting.
+    _gfx->setRotation(6);
     _gfx->setBrightness(200);
     clear();
 }
@@ -76,14 +80,17 @@ void FaceRenderer::clear() {
 }
 
 void FaceRenderer::renderDiagnosticFace(float gazeX, float gazeY, float mouthOpen) {
-    int cx = 160;
-    int cy = 120;
+    int cx = _gfx->width() / 2;
+    int cy = _gfx->height() / 2;
     int eyeDist = 36;
     int eyeW = 16;
     int eyeH = 14;
 
-    // Clear previous face bounding area (dirty rect)
-    _gfx->fillRect(cx - 70, cy - 60, 140, 120, TFT_BLACK);
+    // Repair only the changing eye and mouth regions. Clearing the entire
+    // face at cursor update frequency produces visible LCD flicker.
+    _gfx->fillRect(cx - eyeDist - 20, cy - 24, 40, 38, TFT_BLACK);
+    _gfx->fillRect(cx + eyeDist - 20, cy - 24, 40, 38, TFT_BLACK);
+    _gfx->fillRect(cx - 26, cy + 12, 52, 31, TFT_BLACK);
 
     // Brows
     _gfx->drawLine(cx - eyeDist - 16, cy - 24, cx - eyeDist + 16, cy - 28, TFT_GREEN);
@@ -91,14 +98,14 @@ void FaceRenderer::renderDiagnosticFace(float gazeX, float gazeY, float mouthOpe
 
     // Left Eye
     _gfx->drawEllipse(cx - eyeDist, cy - 6, eyeW, eyeH, TFT_GREEN);
-    int pupilLx = (cx - eyeDist) + (int)(gazeX * 6);
-    int pupilLy = (cy - 6) + (int)(gazeY * 5);
+    int pupilLx = (cx - eyeDist) + (int)(gazeX * 9);
+    int pupilLy = (cy - 6) + (int)(gazeY * 7);
     _gfx->fillCircle(pupilLx, pupilLy, 4, TFT_ORANGE);
 
     // Right Eye
     _gfx->drawEllipse(cx + eyeDist, cy - 6, eyeW, eyeH, TFT_GREEN);
-    int pupilRx = (cx + eyeDist) + (int)(gazeX * 6);
-    int pupilRy = (cy - 6) + (int)(gazeY * 5);
+    int pupilRx = (cx + eyeDist) + (int)(gazeX * 9);
+    int pupilRy = (cy - 6) + (int)(gazeY * 7);
     _gfx->fillCircle(pupilRx, pupilRy, 4, TFT_ORANGE);
 
     // Nose
@@ -113,13 +120,27 @@ void FaceRenderer::renderDiagnosticFace(float gazeX, float gazeY, float mouthOpe
 void FaceRenderer::drawEdgeGlow(float intensity) {
     if (intensity <= 0.05f) return;
     uint16_t glowColor = _gfx->color565(56, 189, 248); // Cyan
-    _gfx->drawRect(0, 0, 320, 240, glowColor);
-    _gfx->drawRect(1, 1, 318, 238, glowColor);
+    _gfx->drawRect(0, 0, _gfx->width(), _gfx->height(), glowColor);
+    _gfx->drawRect(1, 1, _gfx->width() - 2, _gfx->height() - 2, glowColor);
+}
+
+void FaceRenderer::clearPreviousPortalHand() {
+    if (_previousHandActive && _previousHandX > 8) {
+        _gfx->fillRect(
+            _previousHandX - 11,
+            _previousHandY - 11,
+            23,
+            23,
+            TFT_BLACK
+        );
+    }
 }
 
 void FaceRenderer::renderPortalHand(
     const WeaselHandState& hand
 ) {
+    int screenWidth = _gfx->width();
+    int screenHeight = _gfx->height();
     uint16_t black = TFT_BLACK;
 
     uint16_t deepBlue =
@@ -150,121 +171,182 @@ void FaceRenderer::renderPortalHand(
             255
         );
 
-    _gfx->fillRect(
-        0,
-        0,
-        46,
-        240,
-        black
-    );
-
     if (!hand.active) {
+        if (_previousHandActive) {
+            _gfx->fillRect(
+                screenWidth - 46,
+                0,
+                46,
+                screenHeight,
+                black
+            );
+        }
+
+        _previousHandActive = false;
         return;
     }
 
-    int handY =
+    int handX =
         constrain(
-            (int)hand.y,
-            10,
-            229
+            (int)roundf(
+                (1.0f - hand.x / 320.0f) *
+                (screenWidth - 1)
+            ),
+            0,
+            screenWidth - 1
         );
 
+    int handY =
+        constrain(
+            (int)roundf(
+                (hand.y / 240.0f) *
+                (screenHeight - 1)
+            ),
+            0,
+            screenHeight - 1
+        );
+
+    if (!_previousHandActive) {
+        _portalY =
+            constrain(
+                handY,
+                10,
+                screenHeight - 11
+            );
+    }
+
+    int portalY = _portalY;
+
     _gfx->fillRect(
-        0,
+        screenWidth - 2,
         0,
         2,
-        240,
+        screenHeight,
         cyan
     );
 
     _gfx->fillRect(
-        2,
+        screenWidth - 4,
         0,
         2,
-        240,
+        screenHeight,
         cobalt
     );
 
     _gfx->fillRect(
-        4,
+        screenWidth - 7,
         0,
         3,
-        240,
+        screenHeight,
         dimBlue
     );
 
     _gfx->fillRect(
-        7,
+        screenWidth - 11,
         0,
         4,
-        240,
+        screenHeight,
         deepBlue
     );
 
     _gfx->fillCircle(
-        0,
-        handY,
+        screenWidth - 1,
+        portalY,
         34,
         deepBlue
     );
 
     _gfx->fillCircle(
-        0,
-        handY,
+        screenWidth - 1,
+        portalY,
         25,
         dimBlue
     );
 
     _gfx->fillCircle(
-        0,
-        handY,
+        screenWidth - 1,
+        portalY,
         17,
         cobalt
     );
 
     _gfx->fillCircle(
-        0,
-        handY,
+        screenWidth - 1,
+        portalY,
         10,
         cyan
     );
 
     _gfx->fillCircle(
-        8,
-        handY,
+        screenWidth - 9,
+        portalY,
         6,
         cyan
     );
 
     _gfx->fillCircle(
-        8,
-        handY,
+        screenWidth - 9,
+        portalY,
         2,
         TFT_WHITE
     );
 
     _gfx->drawFastHLine(
-        0,
-        handY,
+        screenWidth - 25,
+        portalY,
         25,
         cyan
     );
 
-    if (handY > 0) {
+    if (portalY > 0) {
         _gfx->drawFastHLine(
-            0,
-            handY - 1,
+            screenWidth - 17,
+            portalY - 1,
             17,
             cobalt
         );
     }
 
-    if (handY < 239) {
+    if (portalY < screenHeight - 1) {
         _gfx->drawFastHLine(
-            0,
-            handY + 1,
+            screenWidth - 17,
+            portalY + 1,
             17,
             cobalt
         );
     }
+
+    if (handX > 8) {
+        _gfx->fillCircle(
+            handX,
+            handY,
+            8,
+            deepBlue
+        );
+
+        _gfx->fillCircle(
+            handX,
+            handY,
+            5,
+            cobalt
+        );
+
+        _gfx->fillCircle(
+            handX,
+            handY,
+            3,
+            cyan
+        );
+
+        _gfx->fillCircle(
+            handX,
+            handY,
+            1,
+            TFT_WHITE
+        );
+    }
+
+    _previousHandActive = true;
+    _previousHandX = handX;
+    _previousHandY = handY;
 }

@@ -28,9 +28,9 @@ pnpm --filter @screen-weasels/simulator build
 echo -e "\n[5/8] Building Diagnostic Tools..."
 pnpm --filter @screen-weasels/tools build
 
-# Step 6: Swift Native Bridge Compilation
-echo -e "\n[6/8] Compiling Swift Native Bridge..."
-(cd host-macos/native-bridge && swift build)
+# Step 6: Swift Native Bridge Tests & Compilation
+echo -e "\n[6/8] Testing and compiling Swift Native Bridge..."
+(cd host-macos/native-bridge && swift test)
 
 # Step 7: ESP32 Firmware Compilation (PlatformIO)
 echo -e "\n[7/8] Compiling ESP32 CYD Firmware (COMPILE ONLY)..."

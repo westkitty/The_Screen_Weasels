@@ -1,8 +1,8 @@
 # PROJECT STATE — The Screen Weasels
 
-Last Updated: 2026-09-13 — Milestone 1 Portal Visual Physically Approved
+Last Updated: 2026-09-14 — Milestone 1 Cursor Portal Physically Verified
 Current Branch: main
-Current Milestone: Milestone 1 (Cursor Portal) — Portal Visual Approved; Virtual Continuation Pending
+Current Milestone: Milestone 1 (Cursor Portal) — Complete on CYD #1
 
 ---
 
@@ -17,6 +17,7 @@ Current Milestone: Milestone 1 (Cursor Portal) — Portal Visual Approved; Virtu
 | **Swift Native Bridge** | Cursor Runtime Verified | **PHYSICAL HOST VERIFIED** | Accessibility permission and `CGEventTap` cursor-edge capture physically verified. Background capture requires a pseudo-TTY; the Node host launches the bridge through `/usr/bin/script`. ScreenCaptureKit/audio remains unverified. |
 | **ESP32 Firmware** | Running on CYD #1 | **PHYSICAL HARDWARE VERIFIED** | Firmware physically flashed, hash-verified, booted, and rendered successfully on ESP32-D0WD-V3 rev 3.1. |
 | **Physical CYD Display & Touch** | Verified on CYD #1 | **PHYSICAL HARDWARE VERIFIED** | 240x320 native geometry, 320x240 landscape runtime, backlight, color order, XPT2046 touch, center, and all four corner regions physically verified. |
+| **CYD #1 Cursor Portal** | Complete | **PHYSICAL END-TO-END VERIFIED** | The main display's right edge activates the Hand at the CYD's physical right seam. Continued mouse deltas move it horizontally and vertically through the full 320x240 display; the Weasel tracks it; reverse motion returns through the seam and deactivates cleanly. Andrew physically accepted the complete behavior on 2026-09-14. |
 | **Physical Wi-Fi Radio on CYD** | Verified on CYD #1 | **PHYSICAL HARDWARE VERIFIED** | Successful association and DHCP; measured RSSI -60 dBm. Heap remained healthy after Wi-Fi initialization. |
 | **CYD Board Pinout & Polarity** | Core M0 pins verified on exact unit | **PHYSICAL HARDWARE PARTIALLY VERIFIED** | Display, touch, and backlight mapping/polarity verified. Rear RGB LED, LDR, audio, and microSD remain physically untested. |
 | **Nine Identities ("Target Cast")** | In Development | **PROVISIONAL TEST FIXTURES** | The 9 identities (`fixture_weasel_01` to `fixture_weasel_09`) are provisional simulator/test fixtures. Andrew has not yet canonically finalized the names, features, or personalities. Green face with orange nose/accents represents the established discovery anchor. |
@@ -59,8 +60,8 @@ Verified on physical CYD #1:
 - The verified development port on this Mac is 18765.
 
 This proves bidirectional application-layer communication between the physical
-shell and the Mac. Cursor-edge crossing and physical Hand rendering remain
-pending.
+shell and the Mac. Cursor-edge crossing and physical Hand rendering were later
+verified by the checkpoints below.
 
 ### M1 Checkpoint — macOS Cursor Edge Detection
 
@@ -74,8 +75,8 @@ Verified on the MacBook Air:
 - Cursor coordinates and movement deltas were captured at the boundary.
 
 This proves the host can detect the boundary where the macOS cursor transitions
-into the Weasel-world Hand. Continued motion inside the Weasel world and
-physical CYD Hand rendering remain pending.
+into the Weasel-world Hand. Continued motion and physical CYD rendering were
+subsequently verified by the completed Milestone 1 checkpoint below.
 
 
 ### M1 Checkpoint — Physical Hand Transport
@@ -96,9 +97,9 @@ This proves the complete event-transport path from physical mouse movement,
 through macOS CoreGraphics and the authoritative host, across Wi-Fi, to the
 physical ESP32 shell.
 
-This does not yet prove visible cursor continuation inside Weasel space.
-Virtual Hand movement beyond the Mac edge, perimeter glow, face attention,
-and physical gaze response remain pending.
+This transport checkpoint did not by itself prove visible cursor continuation.
+That physical behavior was subsequently verified by the completed Milestone 1
+checkpoint below.
 
 
 ### M1 Checkpoint — Physical Hand Rendering Proof
@@ -124,13 +125,23 @@ Verified on physical CYD #1:
   visible without overwhelming the black void, follows the cursor entry Y,
   reads as a localized opening rather than a HUD border, attracts the Weasel's
   eyes, and clears without observed stale pixels or corruption.
-- Hand X remains at the entry boundary; continued virtual cursor movement
-  inside Weasel space has not yet been implemented.
+- The host now keeps an authoritative virtual Hand after entry, coalesces raw
+  CoreGraphics deltas at up to 60 Hz, clamps X to 0..320 and Y to 0..240, and
+  preserves signed recent movement in `vx` and `vy`.
+- Main-display geometry uses the actual `minX`, `minY`, `maxX`, and `maxY` bounds;
+  the selected display's vertical span is required for right-edge activation.
+- Physical testing confirmed the Hand enters at the CYD's right seam, travels
+  horizontally and vertically through the full display, follows diagonal input,
+  and moves in the expected directions.
+- The moving luminous marker clears without visible trails or flicker, and the
+  Weasel's eyes track the Hand's actual position.
+- Reverse horizontal motion returns the Hand through the portal, deactivates it
+  cleanly, and a subsequent entry starts at the new entry height.
+- Andrew physically accepted the complete CYD #1 cursor portal on 2026-09-14.
 - CYD #2 has not been started and is explicitly deferred at this checkpoint.
 
-Resume from CYD #1 by implementing continued virtual Hand movement beyond the
-Mac edge using the physically approved portal effect unchanged.
-Do not treat CYD #2 as the next automatic task.
+Milestone 1 is complete on CYD #1. Stop at this boundary; no next feature or
+CYD #2 work is automatically authorized.
 
 
 Milestone 1 is the cursor portal:
@@ -141,5 +152,6 @@ Milestone 1 is the cursor portal:
 4. Represent the cursor as the Weasel-world Hand.
 5. Verify perimeter glow, face attention, and gaze response on physical CYD #1.
 
-The first M1 success condition is simple: the Mac cursor reaches the configured
-screen edge and visibly enters the physical Weasel world.
+The Milestone 1 success condition has been physically met: the Mac cursor crosses
+the configured right edge, continues through CYD #1 as the Hand, attracts the
+Weasel's gaze, and can return through the portal cleanly.

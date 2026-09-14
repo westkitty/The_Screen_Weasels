@@ -22,6 +22,11 @@
 #define CYD_SCREEN_WIDTH  240
 #define CYD_SCREEN_HEIGHT 320
 
+// This ILI9341 mounting is driven as landscape-native. Its MV=1 modes render
+// 90 degrees off on the physical CYD, while MV=0 accepts the full 320 columns.
+#define CYD_RUNTIME_WIDTH  320
+#define CYD_RUNTIME_HEIGHT 240
+
 // Touch Controller (XPT2046 on dedicated SPI pins)
 #define CYD_TOUCH_CS     33
 #define CYD_TOUCH_SCK    25

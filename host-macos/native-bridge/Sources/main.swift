@@ -14,35 +14,17 @@ struct MachineHandState: Encodable {
 }
 
 func emitMachineHand(
-    active: Bool,
-    screenY: CGFloat,
-    dx: Int64,
-    dy: Int64
+    _ snapshot: VirtualHandSnapshot
 ) {
-    let bounds = CGDisplayBounds(CGMainDisplayID())
-
-    let relativeY =
-        (screenY - bounds.minY) /
-        max(bounds.height, 1.0)
-
-    let handY =
-        max(
-            0.0,
-            min(
-                240.0,
-                Double(relativeY) * 240.0
-            )
-        )
-
     let hand = MachineHandState(
-        active: active,
+        active: snapshot.active,
         shellId: "shell_a",
-        x: 0.0,
-        y: handY,
-        vx: Double(dx),
-        vy: Double(dy),
+        x: snapshot.x,
+        y: snapshot.y,
+        vx: snapshot.vx,
+        vy: snapshot.vy,
         clicked: false,
-        edgeGlow: active ? 1.0 : 0.0
+        edgeGlow: snapshot.edgeGlow
     )
 
     let encoder = JSONEncoder()
@@ -73,6 +55,14 @@ let portal = CursorPortalMonitor(
     threshold: 3.0
 )
 
+let handController = VirtualHandController()
+
+func emitPendingHandState() {
+    if let snapshot = handController.takePendingSnapshot() {
+        emitMachineHand(snapshot)
+    }
+}
+
 let hasPermissions =
     portal.checkAccessibilityPermissions()
 
@@ -89,14 +79,41 @@ if hasPermissions {
                 "at x=\(Int(x)) y=\(Int(y))"
             )
         },
-        onEdgeState: { active, _, y, dx, dy in
-            emitMachineHand(
-                active: active,
-                screenY: y,
+        onMouseEvent: { point, _, enteredEdge, dx, dy in
+            if !handController.isActive {
+                if enteredEdge {
+                    handController.activate(
+                        entryScreenY: point.y,
+                        displayBounds: CGDisplayBounds(
+                            CGMainDisplayID()
+                        )
+                    )
+                    emitPendingHandState()
+                }
+                return
+            }
+
+            let deactivated = handController.applyDelta(
                 dx: dx,
                 dy: dy
             )
+
+            if deactivated {
+                emitPendingHandState()
+            }
         }
+    )
+
+    let updateTimer = Timer(
+        timeInterval: 1.0 / 60.0,
+        repeats: true
+    ) { _ in
+        emitPendingHandState()
+    }
+
+    RunLoop.main.add(
+        updateTimer,
+        forMode: .common
     )
 
     print(

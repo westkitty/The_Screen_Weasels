@@ -99,7 +99,16 @@ void loop() {
         float mouthOpen = 0.0f;
 
         if (hand.active) {
-            gazeX = -1.8f;
+            gazeX =
+                (160.0f - hand.x) /
+                160.0f;
+
+            gazeX =
+                constrain(
+                    gazeX,
+                    -1.0f,
+                    1.0f
+                );
 
             gazeY =
                 (hand.y - 120.0f) /
@@ -114,6 +123,8 @@ void loop() {
 
             mouthOpen = 0.15f;
         }
+
+        renderer.clearPreviousPortalHand();
 
         renderer.renderDiagnosticFace(
             gazeX,

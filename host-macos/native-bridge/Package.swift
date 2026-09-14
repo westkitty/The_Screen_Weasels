@@ -13,6 +13,11 @@ let package = Package(
         .executableTarget(
             name: "WeaselNativeBridge",
             path: "Sources"
+        ),
+        .testTarget(
+            name: "WeaselNativeBridgeTests",
+            dependencies: ["WeaselNativeBridge"],
+            path: "Tests"
         )
     ]
 )
