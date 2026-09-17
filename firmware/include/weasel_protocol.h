@@ -50,3 +50,20 @@ struct WeaselAudioFrame {
     bool beat;
     uint32_t timestamp;
 };
+
+
+struct WeaselFamiliarSignal {
+    char entityId[32];
+    char source[48];
+    char attention[16];
+    char reaction[16];
+    float intensity;
+    bool hasLook;
+    float lookX;
+    float lookY;
+    char trigger[16];
+    int priority;
+    uint32_t durationMs;
+    uint32_t timestamp;
+    uint32_t sequence;
+};
