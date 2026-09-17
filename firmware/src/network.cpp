@@ -241,6 +241,32 @@ void setupNetwork(
     webSocket.setReconnectInterval(2000);
 }
 
+void sendTouchEvent(
+    uint16_t x,
+    uint16_t y,
+    uint16_t pressure,
+    bool active
+) {
+    if (!wsConnected) {
+        return;
+    }
+
+    JsonDocument doc;
+    doc["type"] = "TOUCH_EVENT";
+    doc["seq"] = ++outboundSeq;
+    doc["timestamp"] = millis();
+
+    JsonObject payload = doc["payload"].to<JsonObject>();
+    payload["active"] = active;
+    payload["x"] = x;
+    payload["y"] = y;
+    payload["pressure"] = pressure;
+
+    String message;
+    serializeJson(doc, message);
+    webSocket.sendTXT(message);
+}
+
 void loopNetwork() {
     if (!networkStarted) {
         return;
