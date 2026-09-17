@@ -6,10 +6,6 @@ export function applyFamiliarSignalToFaceState(
 ): void {
   state.familiar = signal;
 
-  if (signal.look) {
-    state.gazeX = signal.look.x;
-    state.gazeY = signal.look.y;
-  }
 
   switch (signal.reaction) {
     case 'startled':
