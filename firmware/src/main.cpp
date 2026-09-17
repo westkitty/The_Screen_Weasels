@@ -19,6 +19,8 @@ static float currentGazeX = 0.0f;
 static float currentGazeY = 0.0f;
 static float currentMouthOpen = 0.0f;
 static bool touchWasActive = false;
+static bool familiarReactionActive = false;
+static uint32_t familiarReactionUntilMs = 0;
 
 void setup() {
     Serial.begin(115200);
@@ -172,6 +174,8 @@ void loop() {
         else if (strcmp(familiar.reaction, "blink") == 0) semanticMouth = 0.10f;
 
         currentMouthOpen = constrain(semanticMouth, 0.0f, 1.0f);
+        familiarReactionActive = familiar.durationMs > 0;
+        familiarReactionUntilMs = millis() + familiar.durationMs;
 
         renderer.renderDiagnosticFace(
             currentGazeX,
@@ -184,6 +188,19 @@ void loop() {
             familiar.reaction,
             familiar.attention,
             familiar.intensity
+        );
+    }
+
+    if (
+        familiarReactionActive &&
+        (int32_t)(millis() - familiarReactionUntilMs) >= 0
+    ) {
+        familiarReactionActive = false;
+        currentMouthOpen = 0.0f;
+        renderer.renderDiagnosticFace(
+            currentGazeX,
+            currentGazeY,
+            currentMouthOpen
         );
     }
 
