@@ -59,10 +59,6 @@ export class WorldStateEngine {
     const resolved = resolveFamiliarSignal(state.familiar, signal, signal.timestamp);
     state.familiar = resolved;
 
-    if (resolved.look) {
-      state.gazeX = resolved.look.x;
-      state.gazeY = resolved.look.y;
-    }
 
     switch (resolved.reaction) {
       case 'startled':
