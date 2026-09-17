@@ -64,6 +64,6 @@ struct WeaselFamiliarSignal {
     char trigger[16];
     int priority;
     uint32_t durationMs;
-    uint32_t timestamp;
+    uint64_t timestamp;
     uint32_t sequence;
 };
