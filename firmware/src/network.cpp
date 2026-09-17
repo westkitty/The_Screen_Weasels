@@ -12,6 +12,8 @@ static uint32_t outboundSeq = 0;
 
 static WeaselHandState latestHandState{};
 static bool handStatePending = false;
+static WeaselFamiliarSignal latestFamiliarSignal{};
+static bool familiarSignalPending = false;
 
 static constexpr const char* SHELL_ID = "shell_a";
 static constexpr const char* FIRMWARE_VERSION = "0.2.0-m1";
@@ -101,6 +103,49 @@ static void handleText(uint8_t* payload, size_t length) {
             latestHandState.edgeGlow
         );
 
+        return;
+    }
+
+    if (strcmp(type, "FAMILIAR_SIGNAL") == 0) {
+        JsonObject signal = doc["payload"].as<JsonObject>();
+
+        const char* entityId = signal["entityId"] | "";
+        const char* source = signal["source"] | "";
+        const char* attention = signal["attention"] | "idle";
+        const char* reaction = signal["reaction"] | "neutral";
+        const char* trigger = signal["trigger"] | "system";
+
+        strncpy(latestFamiliarSignal.entityId, entityId, sizeof(latestFamiliarSignal.entityId) - 1);
+        strncpy(latestFamiliarSignal.source, source, sizeof(latestFamiliarSignal.source) - 1);
+        strncpy(latestFamiliarSignal.attention, attention, sizeof(latestFamiliarSignal.attention) - 1);
+        strncpy(latestFamiliarSignal.reaction, reaction, sizeof(latestFamiliarSignal.reaction) - 1);
+        strncpy(latestFamiliarSignal.trigger, trigger, sizeof(latestFamiliarSignal.trigger) - 1);
+
+        latestFamiliarSignal.entityId[sizeof(latestFamiliarSignal.entityId) - 1] = '\0';
+        latestFamiliarSignal.source[sizeof(latestFamiliarSignal.source) - 1] = '\0';
+        latestFamiliarSignal.attention[sizeof(latestFamiliarSignal.attention) - 1] = '\0';
+        latestFamiliarSignal.reaction[sizeof(latestFamiliarSignal.reaction) - 1] = '\0';
+        latestFamiliarSignal.trigger[sizeof(latestFamiliarSignal.trigger) - 1] = '\0';
+
+        latestFamiliarSignal.intensity = signal["intensity"] | 0.0f;
+        latestFamiliarSignal.priority = signal["priority"] | 0;
+        latestFamiliarSignal.durationMs = signal["durationMs"] | 0;
+        latestFamiliarSignal.timestamp = signal["timestamp"] | 0;
+        latestFamiliarSignal.sequence = signal["sequence"] | 0;
+
+        JsonObject look = signal["look"].as<JsonObject>();
+        latestFamiliarSignal.hasLook = !look.isNull();
+        latestFamiliarSignal.lookX = latestFamiliarSignal.hasLook ? (look["x"] | 0.0f) : 0.0f;
+        latestFamiliarSignal.lookY = latestFamiliarSignal.hasLook ? (look["y"] | 0.0f) : 0.0f;
+
+        familiarSignalPending = true;
+
+        Serial.printf(
+            "[WS] FAMILIAR_SIGNAL reaction=%s attention=%s intensity=%.2f\n",
+            latestFamiliarSignal.reaction,
+            latestFamiliarSignal.attention,
+            latestFamiliarSignal.intensity
+        );
         return;
     }
 
@@ -217,5 +262,21 @@ bool consumeLatestHandState(
     *out = latestHandState;
     handStatePending = false;
 
+    return true;
+}
+
+
+bool consumeLatestFamiliarSignal(
+    WeaselFamiliarSignal* out
+) {
+    if (
+        out == nullptr ||
+        !familiarSignalPending
+    ) {
+        return false;
+    }
+
+    *out = latestFamiliarSignal;
+    familiarSignalPending = false;
     return true;
 }
