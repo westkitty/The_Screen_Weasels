@@ -1,4 +1,4 @@
-import type { FaceIdentity, FaceState, SyncedFace } from '@screen-weasels/protocol';
+import { familiarSignalFromTouch, resolveFamiliarSignal, type FamiliarSignal, type FaceIdentity, type FaceState, type SyncedFace } from '@screen-weasels/protocol';
 
 /**
  * WorldStateEngine maintains authoritative world state on the Mac host.
@@ -13,6 +13,8 @@ import type { FaceIdentity, FaceState, SyncedFace } from '@screen-weasels/protoc
 export class WorldStateEngine {
   public identities: Map<string, FaceIdentity> = new Map();
   public faceStates: Map<string, FaceState> = new Map();
+  private touchSeries = new Map<string, { count: number; at: number }>();
+  private familiarSequence = 0;
 
   constructor() {
     this.seedProvisionalFixtures();
@@ -48,6 +50,75 @@ export class WorldStateEngine {
         grabbed: false,
       });
     }
+  }
+
+  public applyFamiliarSignal(signal: FamiliarSignal): FamiliarSignal | null {
+    const state = this.faceStates.get(signal.entityId);
+    if (!state) return null;
+
+    const resolved = resolveFamiliarSignal(state.familiar, signal, signal.timestamp);
+    state.familiar = resolved;
+
+    if (resolved.look) {
+      state.gazeX = resolved.look.x;
+      state.gazeY = resolved.look.y;
+    }
+
+    switch (resolved.reaction) {
+      case 'startled':
+        state.expression = 'startled';
+        state.mouthOpen = Math.max(state.mouthOpen, 0.9 * resolved.intensity);
+        break;
+      case 'curious':
+        state.expression = 'curious';
+        state.mouthOpen = Math.max(state.mouthOpen, 0.2 * resolved.intensity);
+        break;
+      case 'irritated':
+      case 'warning':
+        state.expression = 'suspicious';
+        state.browAngle = 8 * resolved.intensity;
+        break;
+      case 'dizzy':
+      case 'error':
+        state.expression = 'struggling';
+        state.mouthOpen = Math.max(state.mouthOpen, 0.5 * resolved.intensity);
+        break;
+      case 'pleased':
+      case 'celebrate':
+        state.expression = 'idle';
+        state.mouthOpen = Math.max(state.mouthOpen, 0.35 * resolved.intensity);
+        break;
+      case 'sleepy':
+        state.expression = 'idle';
+        state.mouthOpen = 0.05;
+        break;
+      default:
+        break;
+    }
+
+    return resolved;
+  }
+
+  public registerTouch(entityId: string, now = Date.now()): FamiliarSignal | null {
+    const previous = this.touchSeries.get(entityId) ?? { count: 0, at: 0 };
+    const count = now - previous.at < 1600 ? previous.count + 1 : 1;
+    this.touchSeries.set(entityId, {
+      count: count >= 4 ? 0 : count,
+      at: now,
+    });
+
+    const signal = familiarSignalFromTouch(
+      entityId,
+      ++this.familiarSequence,
+      count,
+      now,
+    );
+
+    return this.applyFamiliarSignal(signal);
+  }
+
+  public nextFamiliarSequence(): number {
+    return ++this.familiarSequence;
   }
 
   public getFace(id: string): SyncedFace | null {
