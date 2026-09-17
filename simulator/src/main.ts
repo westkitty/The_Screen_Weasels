@@ -1,6 +1,7 @@
-import type { FaceIdentity, FaceState } from '@screen-weasels/protocol';
+import { familiarSignalFromHand, familiarSignalFromTouch, type FaceIdentity, type FaceState } from '@screen-weasels/protocol';
 import { ShellView } from './shell-view.js';
 import { MockHandController } from './mock-hand.js';
+import { applyFamiliarSignalToFaceState } from './familiar-adapter.js';
 
 /**
  * PROVISIONAL FIXTURE IDENTITIES
@@ -40,6 +41,8 @@ class SimulatorEngine {
   private frameCount = 0;
   private lastFpsUpdate = performance.now();
   private lastFrameTime = performance.now();
+  private familiarSequence = 0;
+  private rapidTouches = new Map<'shell_a' | 'shell_b', { count: number; at: number }>();
 
   constructor() {
     this.shellA = new ShellView('shell_a', 'canvas-a', 'glow-a');
@@ -102,6 +105,29 @@ class SimulatorEngine {
         this.hand.deactivate();
         shell.setEdgeGlow(false);
       });
+
+      shell.canvas.addEventListener('click', () => {
+        const now = Date.now();
+        const previous = this.rapidTouches.get(shell.id) ?? { count: 0, at: 0 };
+        const count = now - previous.at < 1600 ? previous.count + 1 : 1;
+        const next = { count: count >= 4 ? 0 : count, at: now };
+        this.rapidTouches.set(shell.id, next);
+
+        const signal = familiarSignalFromTouch(
+          'fixture_weasel_01',
+          ++this.familiarSequence,
+          count,
+          now,
+        );
+
+        const targets = shell.id === 'shell_a' ? this.creaturesA : this.creaturesB;
+        for (const entity of targets) {
+          applyFamiliarSignalToFaceState(entity.state, {
+            ...signal,
+            entityId: entity.identity.id,
+          });
+        }
+      });
     };
 
     bindShellEvents(this.shellA);
@@ -154,17 +180,15 @@ class SimulatorEngine {
         entity.targetGazeX = Math.max(-1, Math.min(1, (dx / dist) * 0.95));
         entity.targetGazeY = Math.max(-1, Math.min(1, (dy / dist) * 0.95));
 
-        // State classification based on velocity and dwell time
-        if (handSpeed > 350) {
-          // Fast sweep -> Startled (Pupils dilate, mouth drops open)
-          state.expression = 'startled';
-          state.mouthOpen = Math.min(1.0, state.mouthOpen + dt * 6.0);
-        } else if (handSpeed > 30) {
-          // Slow deliberate movement -> Curious
-          state.expression = 'curious';
-          state.mouthOpen = 0.2;
-        } else if (dwell > 0.6) {
-          // Hand stationary / dwelling for > 0.6s -> Settles into watchful idle
+        const signal = familiarSignalFromHand(
+          hand,
+          entity.identity.id,
+          ++this.familiarSequence,
+          Date.now(),
+        );
+        applyFamiliarSignalToFaceState(state, signal);
+
+        if (dwell > 0.6 && handSpeed <= 25 && !hand.clicked) {
           state.expression = 'idle';
           state.mouthOpen = Math.max(0, state.mouthOpen - dt * 2.0);
         }
