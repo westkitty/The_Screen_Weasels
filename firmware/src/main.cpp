@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <WiFi.h>
+#include <string.h>
 #include "board_config.h"
 #include "weasel_protocol.h"
 #include "face_renderer.h"
