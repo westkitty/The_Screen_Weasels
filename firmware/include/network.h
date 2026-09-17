@@ -13,3 +13,7 @@ void loopNetwork();
 bool consumeLatestHandState(
     WeaselHandState* out
 );
+
+bool consumeLatestFamiliarSignal(
+    WeaselFamiliarSignal* out
+);
