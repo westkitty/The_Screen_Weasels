@@ -130,7 +130,7 @@ static void handleText(uint8_t* payload, size_t length) {
         latestFamiliarSignal.intensity = signal["intensity"] | 0.0f;
         latestFamiliarSignal.priority = signal["priority"] | 0;
         latestFamiliarSignal.durationMs = signal["durationMs"] | 0;
-        latestFamiliarSignal.timestamp = signal["timestamp"] | 0;
+        latestFamiliarSignal.timestamp = signal["timestamp"].as<uint64_t>();
         latestFamiliarSignal.sequence = signal["sequence"] | 0;
 
         JsonObject look = signal["look"].as<JsonObject>();
