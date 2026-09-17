@@ -1,5 +1,54 @@
 import { z } from 'zod';
 
+export const FamiliarAttentionSchema = z.enum([
+  'idle',
+  'aware',
+  'focused',
+  'interrupted',
+  'urgent',
+]);
+
+export const FamiliarReactionSchema = z.enum([
+  'neutral',
+  'blink',
+  'curious',
+  'startled',
+  'pleased',
+  'irritated',
+  'sleepy',
+  'dizzy',
+  'celebrate',
+  'warning',
+  'error',
+]);
+
+export const FamiliarTriggerSchema = z.enum([
+  'pointer',
+  'touch',
+  'audio',
+  'system',
+  'agent',
+  'timer',
+  'world',
+]);
+
+export const FamiliarSignalSchema = z.object({
+  entityId: z.string().min(1),
+  source: z.string().min(1),
+  attention: FamiliarAttentionSchema,
+  reaction: FamiliarReactionSchema.optional(),
+  intensity: z.number().min(0).max(1),
+  look: z.object({
+    x: z.number().min(-1).max(1),
+    y: z.number().min(-1).max(1),
+  }).optional(),
+  trigger: FamiliarTriggerSchema,
+  priority: z.number().int().min(0).max(100).optional(),
+  durationMs: z.number().int().positive().optional(),
+  timestamp: z.number(),
+  sequence: z.number().int().nonnegative(),
+});
+
 export const HandStateSchema = z.object({
   active: z.boolean(),
   shellId: z.enum(['shell_a', 'shell_b', 'none']),
@@ -34,6 +83,7 @@ export const FaceStateSchema = z.object({
   browAngle: z.number().default(0),
   expression: z.enum(['idle', 'curious', 'startled', 'suspicious', 'singing', 'struggling']),
   grabbed: z.boolean().default(false),
+  familiar: FamiliarSignalSchema.optional(),
 });
 
 export const SyncedFaceSchema = z.object({
@@ -68,7 +118,6 @@ export const ShellHelloSchema = z.object({
   macAddress: z.string(),
 });
 
-// Typed Message Payloads (Discriminated Union)
 export const HandUpdateMessageSchema = z.object({
   type: z.literal('HAND_UPDATE'),
   seq: z.number(),
@@ -104,6 +153,13 @@ export const TouchEventMessageSchema = z.object({
   payload: TouchEventSchema,
 });
 
+export const FamiliarSignalMessageSchema = z.object({
+  type: z.literal('FAMILIAR_SIGNAL'),
+  seq: z.number(),
+  timestamp: z.number(),
+  payload: FamiliarSignalSchema,
+});
+
 export const PingMessageSchema = z.object({
   type: z.literal('PING'),
   seq: z.number(),
@@ -124,12 +180,22 @@ export const WeaselMessageSchema = z.discriminatedUnion('type', [
   AudioFrameMessageSchema,
   ShellHelloMessageSchema,
   TouchEventMessageSchema,
+  FamiliarSignalMessageSchema,
   PingMessageSchema,
   PongMessageSchema,
 ]);
 
 export const EnvelopeSchema = z.object({
-  type: z.enum(['HAND_UPDATE', 'FACE_SYNC', 'AUDIO_FRAME', 'SHELL_HELLO', 'TOUCH_EVENT', 'PING', 'PONG']),
+  type: z.enum([
+    'HAND_UPDATE',
+    'FACE_SYNC',
+    'AUDIO_FRAME',
+    'SHELL_HELLO',
+    'TOUCH_EVENT',
+    'FAMILIAR_SIGNAL',
+    'PING',
+    'PONG',
+  ]),
   seq: z.number(),
   timestamp: z.number(),
   payload: z.unknown(),
