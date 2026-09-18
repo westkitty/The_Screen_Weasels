@@ -42,8 +42,8 @@ Two ESP32-2432S028R Screen Weasel shells coordinated by a macOS host with shared
 - Branch diff against main: inspected; changes are bounded to Familiar Bus, tests, docs, firmware transport, and operational state.
 - Protocol tests: verified in GitHub Actions.
 - Host, simulator, and tools TypeScript builds: verified in GitHub Actions.
-- PlatformIO firmware compile: in progress in GitHub Actions.
-- GitHub Actions workflow: active; TypeScript job passed on current head.
+- PlatformIO firmware compile: verified in GitHub Actions.
+- GitHub Actions workflow: passed for the implementation head; later state-only commits do not alter runtime code.
 - macOS native bridge/runtime: unverified in this change.
 - Physical CYD behavior: unverified in this change.
 - Attempted disposable Linux validation: blocked because the runner cannot resolve github.com.
