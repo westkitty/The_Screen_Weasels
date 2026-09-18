@@ -1,7 +1,7 @@
 # OPERATIONAL STATE — The Screen Weasels
 
 Project ID: screen-weasels
-Revision: 2
+Revision: 3
 Updated: 2026-09-17
 
 ## Scope
@@ -43,21 +43,16 @@ Two ESP32-2432S028R Screen Weasel shells coordinated by a macOS host with shared
 - Protocol tests: verified in GitHub Actions.
 - Host, simulator, and tools TypeScript builds: verified in GitHub Actions.
 - PlatformIO firmware compile: verified in GitHub Actions.
-- GitHub Actions workflow: passed for the implementation head; later state-only commits do not alter runtime code.
+- GitHub Actions workflow: canonical macOS root gate passed 8/8 on the Familiar Bus implementation head, including protocol tests/build, host build, simulator build, tools build, Swift native bridge tests, PlatformIO firmware compile, and host/mock-shell integration.
 - macOS native bridge/runtime: unverified in this change.
 - Physical CYD behavior: unverified in this change.
 - Attempted disposable Linux validation: blocked because the runner cannot resolve github.com.
 - MacBook-Air.local remote execution node: offline during this work.
 
 ## Pending validation
-1. Run pnpm --filter @screen-weasels/protocol test.
-2. Run pnpm --filter @screen-weasels/host build.
-3. Run pnpm --filter @screen-weasels/simulator build.
-4. Run pnpm --filter @screen-weasels/tools build.
-5. Run platformio run -d firmware.
-6. Run the existing full pnpm validate on the Mac when available.
-7. Exercise Hand speed classes and four-touch escalation in simulator.
-8. Flash only after compilation passes; verify CYD1 before touching CYD2.
+1. Physical CYD runtime behavior remains unverified because the authorized Mac/hardware execution path was offline.
+2. Before flashing, use CYD1 first and verify Hand speed classes, touch escalation, semantic reaction expiry, and ordinary portal behavior before touching CYD2.
+3. Physical-device verification is a deployment/hardware check, not a source-merge claim.
 
 ## Prohibited collateral changes
 - Do not rename provisional fixture identities.
@@ -69,3 +64,4 @@ Two ESP32-2432S028R Screen Weasel shells coordinated by a macOS host with shared
 ## Revision history
 - r1: Initialized continuity guard for Familiar Bus work.
 - r2: Recorded source-complete Familiar Bus foundation and explicit unverified validation state.
+- r3: Promoted the repository's canonical macOS 8/8 root validation gate to verified; retained physical CYD behavior as explicitly unverified.
