@@ -1,5 +1,9 @@
 import { z } from 'zod';
 import {
+  FamiliarAttentionSchema,
+  FamiliarReactionSchema,
+  FamiliarTriggerSchema,
+  FamiliarSignalSchema,
   HandStateSchema,
   FaceIdentitySchema,
   FaceStateSchema,
@@ -13,11 +17,17 @@ import {
   AudioFrameMessageSchema,
   ShellHelloMessageSchema,
   TouchEventMessageSchema,
+  FamiliarSignalMessageSchema,
   PingMessageSchema,
   PongMessageSchema,
   WeaselMessageSchema,
   EnvelopeSchema,
 } from './schemas.js';
+
+export type FamiliarAttention = z.infer<typeof FamiliarAttentionSchema>;
+export type FamiliarReaction = z.infer<typeof FamiliarReactionSchema>;
+export type FamiliarTrigger = z.infer<typeof FamiliarTriggerSchema>;
+export type FamiliarSignal = z.infer<typeof FamiliarSignalSchema>;
 
 export type HandState = z.infer<typeof HandStateSchema>;
 export type FaceIdentity = z.infer<typeof FaceIdentitySchema>;
@@ -33,6 +43,7 @@ export type FaceSyncMessage = z.infer<typeof FaceSyncMessageSchema>;
 export type AudioFrameMessage = z.infer<typeof AudioFrameMessageSchema>;
 export type ShellHelloMessage = z.infer<typeof ShellHelloMessageSchema>;
 export type TouchEventMessage = z.infer<typeof TouchEventMessageSchema>;
+export type FamiliarSignalMessage = z.infer<typeof FamiliarSignalMessageSchema>;
 export type PingMessage = z.infer<typeof PingMessageSchema>;
 export type PongMessage = z.infer<typeof PongMessageSchema>;
 export type WeaselMessage = z.infer<typeof WeaselMessageSchema>;

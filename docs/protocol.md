@@ -138,3 +138,34 @@ Dispatched when physical resistive touch is triggered on the screen.
   }
 }
 ```
+
+
+---
+
+## 4. Familiar Bus semantic message
+
+### `FAMILIAR_SIGNAL`
+Carries renderer-neutral attention/reaction state. It augments existing Hand and face kinematics; it does not replace `HAND_UPDATE` or continuous gaze.
+
+```json
+{
+  "type": "FAMILIAR_SIGNAL",
+  "seq": 1045,
+  "timestamp": 1789682400000,
+  "payload": {
+    "entityId": "fixture_weasel_01",
+    "source": "screen-weasels.hand",
+    "attention": "interrupted",
+    "reaction": "startled",
+    "intensity": 0.92,
+    "look": { "x": 0.5, "y": -0.25 },
+    "trigger": "pointer",
+    "priority": 50,
+    "durationMs": 900,
+    "timestamp": 1789682400000,
+    "sequence": 22
+  }
+}
+```
+
+Semantic fields are shared across renderers. Screen Weasels keeps `gazeX/gazeY` authoritative and uses Familiar Bus only to select expressive reaction state.

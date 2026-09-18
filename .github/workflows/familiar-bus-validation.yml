@@ -1,0 +1,58 @@
+name: Familiar Bus validation
+
+on:
+  push:
+    branches:
+      - feature/familiar-bus-foundation
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  typescript:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @screen-weasels/protocol test
+      - run: pnpm --filter @screen-weasels/host build
+      - run: pnpm --filter @screen-weasels/simulator build
+      - run: pnpm --filter @screen-weasels/tools build
+
+  firmware:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install platformio
+      - run: platformio run -d firmware
+
+  canonical-root-gate:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pnpm install --frozen-lockfile
+      - run: python -m venv .venv
+      - run: .venv/bin/python -m pip install platformio
+      - run: pnpm validate

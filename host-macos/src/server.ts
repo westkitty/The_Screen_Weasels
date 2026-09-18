@@ -3,6 +3,9 @@ import {
   DEFAULT_WEBSOCKET_PORT,
   DEFAULT_WEBSOCKET_PATH,
   WeaselMessageSchema,
+  familiarSignalFromHand,
+  type HandState,
+  type FamiliarSignal,
   type WeaselMessage,
   type SyncedFace,
 } from '@screen-weasels/protocol';
@@ -66,8 +69,39 @@ export class WeaselHostServer {
       }
     } else if (msg.type === 'TOUCH_EVENT') {
       console.log(`[Host] Touch from shell at (${msg.payload.x}, ${msg.payload.y}, active=${msg.payload.active})`);
+      if (msg.payload.active) {
+        const signal = this.engine.registerTouch('fixture_weasel_01');
+        if (signal) {
+          this.broadcast('FAMILIAR_SIGNAL', signal);
+          const face = this.engine.getFace(signal.entityId);
+          if (face) this.broadcast('FACE_SYNC', { faces: [face] });
+        }
+      }
     } else if (msg.type === 'PING') {
       this.send(ws, 'PONG', {});
+    }
+  }
+
+  public publishHand(hand: HandState) {
+    this.broadcast('HAND_UPDATE', hand);
+
+    const signal = familiarSignalFromHand(
+      hand,
+      'fixture_weasel_01',
+      this.engine.nextFamiliarSequence(),
+      Date.now(),
+    );
+
+    const resolved = this.engine.applyFamiliarSignal(signal);
+    if (resolved) {
+      this.broadcast('FAMILIAR_SIGNAL', resolved);
+    }
+  }
+
+  public publishFamiliar(signal: FamiliarSignal) {
+    const resolved = this.engine.applyFamiliarSignal(signal);
+    if (resolved) {
+      this.broadcast('FAMILIAR_SIGNAL', resolved);
     }
   }
 

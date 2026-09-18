@@ -16,10 +16,7 @@ async function main() {
   await server.start(port);
 
   const bridge = startNativeBridge((hand) => {
-    server.broadcast(
-      'HAND_UPDATE',
-      hand,
-    );
+    server.publishHand(hand);
 
     console.log(
       `[Host] HAND_UPDATE -> shells ` +

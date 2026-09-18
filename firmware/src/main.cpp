@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <WiFi.h>
+#include <string.h>
 #include "board_config.h"
 #include "weasel_protocol.h"
 #include "face_renderer.h"
@@ -14,6 +15,12 @@
 
 static LGFX_CYD gfx;
 static FaceRenderer renderer(&gfx);
+static float currentGazeX = 0.0f;
+static float currentGazeY = 0.0f;
+static float currentMouthOpen = 0.0f;
+static bool touchWasActive = false;
+static bool familiarReactionActive = false;
+static uint32_t familiarReactionUntilMs = 0;
 
 void setup() {
     Serial.begin(115200);
@@ -126,10 +133,14 @@ void loop() {
 
         renderer.clearPreviousPortalHand();
 
+        currentGazeX = gazeX;
+        currentGazeY = gazeY;
+        currentMouthOpen = mouthOpen;
+
         renderer.renderDiagnosticFace(
-            gazeX,
-            gazeY,
-            mouthOpen
+            currentGazeX,
+            currentGazeY,
+            currentMouthOpen
         );
 
         renderer.renderPortalHand(
@@ -146,20 +157,81 @@ void loop() {
         );
     }
 
+    WeaselFamiliarSignal familiar;
+
+    if (consumeLatestFamiliarSignal(&familiar)) {
+        float semanticMouth = currentMouthOpen;
+
+        if (strcmp(familiar.reaction, "startled") == 0) semanticMouth = 1.0f;
+        else if (strcmp(familiar.reaction, "curious") == 0) semanticMouth = 0.25f;
+        else if (strcmp(familiar.reaction, "pleased") == 0) semanticMouth = 0.45f;
+        else if (strcmp(familiar.reaction, "celebrate") == 0) semanticMouth = 0.65f;
+        else if (strcmp(familiar.reaction, "irritated") == 0) semanticMouth = 0.12f;
+        else if (strcmp(familiar.reaction, "warning") == 0) semanticMouth = 0.20f;
+        else if (strcmp(familiar.reaction, "dizzy") == 0) semanticMouth = 0.55f;
+        else if (strcmp(familiar.reaction, "error") == 0) semanticMouth = 0.75f;
+        else if (strcmp(familiar.reaction, "sleepy") == 0) semanticMouth = 0.05f;
+        else if (strcmp(familiar.reaction, "blink") == 0) semanticMouth = 0.10f;
+
+        currentMouthOpen = constrain(semanticMouth, 0.0f, 1.0f);
+        familiarReactionActive = familiar.durationMs > 0;
+        familiarReactionUntilMs = millis() + familiar.durationMs;
+
+        renderer.renderDiagnosticFace(
+            currentGazeX,
+            currentGazeY,
+            currentMouthOpen
+        );
+
+        Serial.printf(
+            "[Familiar] reaction=%s attention=%s intensity=%.2f\n",
+            familiar.reaction,
+            familiar.attention,
+            familiar.intensity
+        );
+    }
+
+    if (
+        familiarReactionActive &&
+        (int32_t)(millis() - familiarReactionUntilMs) >= 0
+    ) {
+        familiarReactionActive = false;
+        currentMouthOpen = 0.0f;
+        renderer.renderDiagnosticFace(
+            currentGazeX,
+            currentGazeY,
+            currentMouthOpen
+        );
+    }
+
     uint16_t touchX = 0;
     uint16_t touchY = 0;
 
-    // Check resistive touch
+    // Check resistive touch. Emit transitions once so one press is one semantic event.
     if (gfx.getTouch(&touchX, &touchY)) {
         float gazeX = ((float)touchX - 160.0f) / 160.0f;
         float gazeY = ((float)touchY - 120.0f) / 120.0f;
         gazeX = constrain(gazeX, -1.0f, 1.0f);
         gazeY = constrain(gazeY, -1.0f, 1.0f);
 
-        renderer.renderDiagnosticFace(gazeX, gazeY, 0.3f);
+        currentGazeX = gazeX;
+        currentGazeY = gazeY;
+        currentMouthOpen = 0.3f;
+
+        renderer.renderDiagnosticFace(currentGazeX, currentGazeY, currentMouthOpen);
+
+        if (!touchWasActive) {
+            sendTouchEvent(touchX, touchY, 1, true);
+            touchWasActive = true;
+        }
+
         Serial.printf("[Touch] Raw X: %d, Y: %d -> Gaze: (%.2f, %.2f)\n", touchX, touchY, gazeX, gazeY);
         delay(30);
     } else {
+        if (touchWasActive) {
+            sendTouchEvent(touchX, touchY, 0, false);
+            touchWasActive = false;
+        }
         delay(10);
     }
 }
